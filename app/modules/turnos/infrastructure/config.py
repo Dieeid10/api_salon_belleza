@@ -1,0 +1,1 @@
+zona_horaria: str = "America/Argentina/Buenos_Aires"
