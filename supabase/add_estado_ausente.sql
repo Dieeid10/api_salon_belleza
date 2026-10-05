@@ -1,0 +1,1 @@
+ALTER TYPE estado_turno ADD VALUE IF NOT EXISTS 'Ausente';
