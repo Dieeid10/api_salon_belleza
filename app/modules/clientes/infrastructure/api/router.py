@@ -31,13 +31,12 @@ def obtener(cliente_id: int, uc: ClientesUseCases = Depends(get_use_cases)):
 def crear(body: ClienteRequest, uc: ClientesUseCases = Depends(get_use_cases)):
     return asdict(uc.crear(CrearClienteCommand(**body.model_dump())))
 
+@router.patch("/{cliente_id}/activar", status_code=status.HTTP_204_NO_CONTENT)
+def activar(cliente_id: int, uc: ClientesUseCases = Depends(get_use_cases)):
+    uc.activar(cliente_id)
 
 @router.put("/{cliente_id}", response_model=ClienteResponse)
-def actualizar(
-    cliente_id: int,
-    body: ClienteRequest,
-    uc: ClientesUseCases = Depends(get_use_cases),
-):
+def actualizar(cliente_id: int, body: ClienteRequest, uc: ClientesUseCases = Depends(get_use_cases)):
     command = ActualizarClienteCommand(cliente_id=cliente_id, **body.model_dump())
     return asdict(uc.actualizar(command))
 

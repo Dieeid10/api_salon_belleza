@@ -19,7 +19,7 @@ class ReservarTurno:
 
     def execute(self, cmd: ReservarTurnoCommand) -> TurnoResult:
         ahora = self._reloj()
-        # Todo lo que sigue es una sola transacción: si algo falla, no queda nada guardado
+        # Todo lo que sigue es una sola transacción, si algo falla, no queda nada guardado
         with self._uow as uow:
             verificar_profesional(uow, cmd.profesional_id)
             servicios = cargar_servicios(uow, cmd.servicio_ids)
@@ -30,7 +30,7 @@ class ReservarTurno:
             cliente_id = uow.clientes.obtener_o_crear(
                 cmd.nombre, cmd.apellido, cmd.telefono
             )
-            turno = Turno.agendar(  # valida futuro y calcula el fin
+            turno = Turno.agendar( 
                 cliente_id, cmd.profesional_id, cmd.inicio, detalles, ahora
             )
 

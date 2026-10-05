@@ -1,7 +1,6 @@
 from app.modules.turnos.application.dto import DetalleResult, TurnoResult
 from app.modules.turnos.domain.entities import Turno
 
-
 def to_result(t: Turno) -> TurnoResult:
     return TurnoResult(
         id=t.id,

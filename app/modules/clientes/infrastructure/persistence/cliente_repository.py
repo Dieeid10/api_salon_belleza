@@ -7,7 +7,6 @@ from app.shared.infrastructure.db.crud import Crud
 
 TABLE = "clientes"
 
-
 class PsycopgClienteRepository:
     def __init__(self, conn: Connection) -> None:
         self._conn = conn
@@ -29,7 +28,7 @@ class PsycopgClienteRepository:
             rows = self._crud.select_all(TABLE, "activo = %s", (True,))
         else:
             rows = self._crud.select_all(TABLE)
-        return [self._to_entity(row) for row in rows]
+        return [self._to_entity(row) for row in sorted(rows, key=lambda row: row["id"])]
 
     def obtener_o_crear_para_reserva(
         self, nombre: str, apellido: str, telefono: str

@@ -56,6 +56,11 @@ class ClientesUseCases:
         cliente.desactivar()
         self._repo.actualizar(cliente)
 
+    def activar(self, cliente_id: int) -> None:
+        cliente = self._get_or_fail(cliente_id)
+        cliente.activar()
+        self._repo.actualizar(cliente)
+
     def _get_or_fail(self, cliente_id: int) -> Cliente:
         cliente = self._repo.obtener(cliente_id)
         if cliente is None:

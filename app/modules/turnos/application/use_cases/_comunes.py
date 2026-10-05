@@ -11,7 +11,7 @@ def verificar_profesional(uow: TurnosUnitOfWork, profesional_id: int) -> None:
 
 
 def cargar_servicios(uow: TurnosUnitOfWork, servicio_ids: list[int]) -> list[ServicioInfo]:
-    ids = list(dict.fromkeys(servicio_ids))  # sin repetidos, conserva el orden
+    ids = list(dict.fromkeys(servicio_ids))
     if not ids:
         raise TurnoSinServicios()
     servicios = uow.servicios.obtener_activos(ids)

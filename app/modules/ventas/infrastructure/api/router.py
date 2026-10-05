@@ -10,15 +10,10 @@ from app.modules.ventas.infrastructure.api.schemas import (
     RegistrarVentaRequest,
     VentaResponse,
 )
-from app.shared.security import current_user
+from app.shared.security import require_role
 
 router = APIRouter()
-
-
-def personal_del_salon(user: dict = Depends(current_user)) -> dict:
-    if user.get("app_metadata", {}).get("role") not in {"dueno", "vendedor"}:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "No tenés permiso")
-    return user
+personal_del_salon = require_role("dueno", "vendedor")
 
 
 @router.get("/", response_model=list[VentaResponse])
