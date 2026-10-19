@@ -1,3 +1,3 @@
-from app.modules.profesionales.domain.entities import Profesional
+from app.modules.profesionales.domain.entities import Professional
 
-__all__ = ["Profesional"]
+__all__ = ["Professional"]

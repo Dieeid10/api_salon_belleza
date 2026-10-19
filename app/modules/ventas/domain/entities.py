@@ -9,17 +9,17 @@ from app.shared.error import ValidationError
 _CENTAVO = Decimal("0.01")
 
 
-def _validar_importe(nombre: str, importe: Decimal) -> Decimal:
-    valor = Decimal(str(importe))
-    if not valor.is_finite() or valor < 0:
-        raise ValidationError(f"{nombre} debe ser un importe válido no negativo")
-    if valor.as_tuple().exponent < -2:
-        raise ValidationError(f"{nombre} admite como máximo dos decimales")
-    return valor
+def _validate_amount(name: str, amount: Decimal) -> Decimal:
+    value = Decimal(str(amount))
+    if not value.is_finite() or value < 0:
+        raise ValidationError(f"{name} debe ser un importe válido no negativo")
+    if value.as_tuple().exponent < -2:
+        raise ValidationError(f"{name} admite como máximo dos decimales")
+    return value
 
 
 @dataclass(frozen=True)
-class DetalleVenta:
+class SaleDetail:
     servicio_id: int | None
     descuento_id: int | None
     precio_lista: Decimal | None
@@ -31,12 +31,12 @@ class DetalleVenta:
             object.__setattr__(
                 self,
                 "precio_lista",
-                _validar_importe("El precio de lista", self.precio_lista),
+                _validate_amount("El precio de lista", self.precio_lista),
             )
         object.__setattr__(
             self,
             "precio_cobrado",
-            _validar_importe("El precio cobrado", self.precio_cobrado),
+            _validate_amount("El precio cobrado", self.precio_cobrado),
         )
         porcentaje = Decimal(str(self.descuento_pct))
         if not porcentaje.is_finite() or porcentaje < 0 or porcentaje > 100:
@@ -47,7 +47,7 @@ class DetalleVenta:
 
 
 @dataclass
-class Venta:
+class Sale:
     fecha_hora: datetime
     cliente_id: int | None
     empleado_id: UUID | None
@@ -55,7 +55,7 @@ class Venta:
     descuento_chisme_id: int | None
     chisme_pct: Decimal
     chisme_detalle: str | None
-    detalles: list[DetalleVenta] = field(default_factory=list)
+    detalles: list[SaleDetail] = field(default_factory=list)
     id: int | None = None
 
     def __post_init__(self) -> None:

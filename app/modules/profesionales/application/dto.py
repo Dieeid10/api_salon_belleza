@@ -3,20 +3,20 @@ from datetime import time
 
 
 @dataclass(frozen=True)
-class CrearProfesionalCommand:
+class CreateProfessionalCommand:
     nombre: str
     perfil_id: str | None = None
 
 
 @dataclass(frozen=True)
-class ActualizarProfesionalCommand:
+class UpdateProfessionalCommand:
     profesional_id: int
     nombre: str
     perfil_id: str | None = None
 
 
 @dataclass(frozen=True)
-class ProfesionalResult:
+class ProfessionalResult:
     id: int
     nombre: str
     perfil_id: str | None
@@ -24,6 +24,6 @@ class ProfesionalResult:
 
 
 @dataclass(frozen=True)
-class HorarioAtencionInfo:
+class BusinessHoursInfo:
     hora_apertura: time
     hora_cierre: time

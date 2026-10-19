@@ -2,101 +2,101 @@ from collections.abc import Callable
 from datetime import datetime
 from decimal import Decimal
 
-from app.modules.clientes.domain.errors import ClienteNoEncontrada
+from app.modules.clientes.domain.errors import ClientNotFound
 from app.modules.descuentos.domain.entities import TipoDescuento
 from app.modules.ventas.application.dto import (
-    DetalleVentaResult,
-    RegistrarVentaCommand,
-    VentaResult,
+    RegisterSaleCommand,
+    SaleDetailResult,
+    SaleResult,
 )
 from app.modules.ventas.application.ports import (
-    ClienteLookup,
-    DescuentoChismeLookup,
-    TurnoVentaLookup,
-    VentaRepository,
+    AppointmentSaleLookup,
+    ClientLookup,
+    GossipDiscountLookup,
+    SaleRepository,
 )
-from app.modules.ventas.domain.entities import DetalleVenta, Venta
+from app.modules.ventas.domain.entities import Sale, SaleDetail
 from app.modules.ventas.domain.errors import (
-    DescuentoChismeNoDisponible,
-    TurnoNoRealizado,
-    TurnoVentaNoEncontrado,
-    VentaDeTurnoDuplicada,
-    VentaNoEncontrada,
+    AppointmentForSaleNotFound,
+    AppointmentNotCompleted,
+    DuplicateAppointmentSale,
+    GossipDiscountUnavailable,
+    SaleNotFound,
 )
 
-Reloj = Callable[[], datetime]
+Clock = Callable[[], datetime]
 
 
-def _to_result(venta: Venta) -> VentaResult:
-    assert venta.id is not None
-    return VentaResult(
-        id=venta.id,
-        fecha_hora=venta.fecha_hora,
-        cliente_id=venta.cliente_id,
-        empleado_id=venta.empleado_id,
-        turno_id=venta.turno_id,
-        descuento_chisme_id=venta.descuento_chisme_id,
-        chisme_pct=venta.chisme_pct,
-        chisme_detalle=venta.chisme_detalle,
-        subtotal=venta.subtotal,
-        descuento_chisme=venta.descuento_chisme,
-        total=venta.total,
-        detalles=[
-            DetalleVentaResult(
+def _to_result(sale: Sale) -> SaleResult:
+    assert sale.id is not None
+    return SaleResult(
+        id = sale.id,
+        fecha_hora = sale.fecha_hora,
+        cliente_id = sale.cliente_id,
+        empleado_id = sale.empleado_id,
+        turno_id = sale.turno_id,
+        descuento_chisme_id = sale.descuento_chisme_id,
+        chisme_pct = sale.chisme_pct,
+        chisme_detalle = sale.chisme_detalle,
+        subtotal = sale.subtotal,
+        descuento_chisme = sale.descuento_chisme,
+        total = sale.total,
+        detalles = [
+                SaleDetailResult(
                 servicio_id=detalle.servicio_id,
                 descuento_id=detalle.descuento_id,
                 precio_lista=detalle.precio_lista,
                 descuento_pct=detalle.descuento_pct,
                 precio_cobrado=detalle.precio_cobrado,
             )
-            for detalle in venta.detalles
-        ],
+            for detalle in sale.detalles
+        ]
     )
 
 
-class VentasUseCases:
+class SaleUseCases:
     def __init__(
         self,
-        repo: VentaRepository,
-        turnos: TurnoVentaLookup,
-        clientes: ClienteLookup,
-        descuentos: DescuentoChismeLookup,
-        reloj: Reloj,
+        repo: SaleRepository,
+        turnos: AppointmentSaleLookup,
+        clients: ClientLookup,
+        descuentos: GossipDiscountLookup,
+        reloj: Clock,
     ) -> None:
         self._repo = repo
         self._turnos = turnos
-        self._clientes = clientes
+        self._clients = clients
         self._descuentos = descuentos
         self._reloj = reloj
 
-    def registrar(self, cmd: RegistrarVentaCommand) -> VentaResult:
-        turno = self._turnos.obtener_para_venta(cmd.turno_id, bloquear=True)
+    def register(self, cmd: RegisterSaleCommand) -> SaleResult:
+        turno = self._turnos.get_for_sale(cmd.turno_id, lock=True)
         if turno is None:
-            raise TurnoVentaNoEncontrado()
+            raise AppointmentForSaleNotFound()
         if turno.estado != "Realizado":
-            raise TurnoNoRealizado()
+            raise AppointmentNotCompleted()
         if not turno.detalles:
-            raise TurnoNoRealizado("El turno realizado no tiene detalles cobrables")
-        if self._repo.obtener_por_turno(turno.id) is not None:
-            raise VentaDeTurnoDuplicada()
-        if self._clientes.obtener(turno.cliente_id) is None:
-            raise ClienteNoEncontrada()
+            raise AppointmentNotCompleted("El turno realizado no tiene detalles cobrables")
+        if self._repo.get_by_appointment(turno.id) is not None:
+            raise DuplicateAppointmentSale()
+        if self._clients.get(turno.cliente_id) is None:
+            raise ClientNotFound()
 
         texto_chisme = cmd.chisme_detalle.strip() if cmd.chisme_detalle else None
         descuento_chisme = None
         porcentaje_chisme = Decimal("0")
         if texto_chisme:
-            descuento_chisme = self._descuentos.obtener_chisme()
+            descuento_chisme = self._descuentos.get_gossip_discount()
             if (
                 descuento_chisme is None
                 or not descuento_chisme.activo
                 or descuento_chisme.tipo is not TipoDescuento.CHISME
             ):
-                raise DescuentoChismeNoDisponible()
+                raise GossipDiscountUnavailable()
             porcentaje_chisme = descuento_chisme.porcentaje
 
         detalles = [
-            DetalleVenta(
+            SaleDetail(
                 servicio_id=detalle.servicio_id,
                 descuento_id=detalle.descuento_id,
                 precio_lista=detalle.precio_lista,
@@ -105,7 +105,7 @@ class VentasUseCases:
             )
             for detalle in turno.detalles
         ]
-        venta = Venta(
+        venta = Sale(
             fecha_hora=self._reloj(),
             cliente_id=turno.cliente_id,
             empleado_id=cmd.empleado_id,
@@ -117,13 +117,13 @@ class VentasUseCases:
             chisme_detalle=texto_chisme,
             detalles=detalles,
         )
-        return _to_result(self._repo.crear(venta))
+        return _to_result(self._repo.create(venta))
 
-    def obtener(self, venta_id: int) -> VentaResult:
-        venta = self._repo.obtener(venta_id)
+    def get(self, venta_id: int) -> SaleResult:
+        venta = self._repo.get(venta_id)
         if venta is None:
-            raise VentaNoEncontrada()
+            raise SaleNotFound()
         return _to_result(venta)
 
-    def listar(self) -> list[VentaResult]:
-        return [_to_result(venta) for venta in self._repo.listar()]
+    def list_all(self) -> list[SaleResult]:
+        return [_to_result(venta) for venta in self._repo.list_all()]

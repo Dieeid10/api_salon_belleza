@@ -5,10 +5,10 @@ from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Depends, status
 
 from app.modules.descuentos.application.dto import (
-    ActualizarDescuentoCommand,
-    CrearDescuentoCommand,
+    CreateDiscountCommand,
+    UpdateDiscountCommand,
 )
-from app.modules.descuentos.application.use_cases import DescuentosUseCases
+from app.modules.descuentos.application.use_cases import DiscountUseCases
 from app.modules.descuentos.infrastructure.api.dependencies import get_use_cases
 from app.modules.descuentos.infrastructure.api.schemas import (
     DescuentoRequest,
@@ -22,14 +22,14 @@ _ZONA_HORARIA = ZoneInfo("America/Argentina/Buenos_Aires")
 
 
 @router.get("/", response_model=list[DescuentoResponse])
-def listar_publicos(uc: DescuentosUseCases = Depends(get_use_cases)):
+def listar_publicos(uc: DiscountUseCases = Depends(get_use_cases)):
     hoy = datetime.now(_ZONA_HORARIA).date()
-    return [asdict(descuento) for descuento in uc.listar_publicos(hoy)]
+    return [asdict(descuento) for descuento in uc.list_public(hoy)]
 
 
 @router.get("/gestion", response_model=list[DescuentoResponse], dependencies=duena)
-def listar_gestion(uc: DescuentosUseCases = Depends(get_use_cases)):
-    return [asdict(descuento) for descuento in uc.listar()]
+def listar_gestion(uc: DiscountUseCases = Depends(get_use_cases)):
+    return [asdict(descuento) for descuento in uc.list_all()]
 
 
 @router.get(
@@ -39,9 +39,9 @@ def listar_gestion(uc: DescuentosUseCases = Depends(get_use_cases)):
 )
 def obtener_gestion(
     descuento_id: int,
-    uc: DescuentosUseCases = Depends(get_use_cases),
+    uc: DiscountUseCases = Depends(get_use_cases),
 ):
-    return asdict(uc.obtener(descuento_id))
+    return asdict(uc.get(descuento_id))
 
 
 @router.post(
@@ -50,8 +50,8 @@ def obtener_gestion(
     status_code=status.HTTP_201_CREATED,
     dependencies=duena,
 )
-def crear(body: DescuentoRequest, uc: DescuentosUseCases = Depends(get_use_cases)):
-    return asdict(uc.crear(CrearDescuentoCommand(**body.model_dump())))
+def crear(body: DescuentoRequest, uc: DiscountUseCases = Depends(get_use_cases)):
+    return asdict(uc.create(CreateDiscountCommand(**body.model_dump())))
 
 
 @router.put(
@@ -62,13 +62,13 @@ def crear(body: DescuentoRequest, uc: DescuentosUseCases = Depends(get_use_cases
 def actualizar(
     descuento_id: int,
     body: DescuentoRequest,
-    uc: DescuentosUseCases = Depends(get_use_cases),
+    uc: DiscountUseCases = Depends(get_use_cases),
 ):
-    command = ActualizarDescuentoCommand(
+    command = UpdateDiscountCommand(
         descuento_id=descuento_id,
         **body.model_dump(),
     )
-    return asdict(uc.actualizar(command))
+    return asdict(uc.update(command))
 
 
 @router.delete(
@@ -78,6 +78,6 @@ def actualizar(
 )
 def desactivar(
     descuento_id: int,
-    uc: DescuentosUseCases = Depends(get_use_cases),
+    uc: DiscountUseCases = Depends(get_use_cases),
 ):
-    uc.desactivar(descuento_id)
+    uc.deactivate(descuento_id)

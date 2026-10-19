@@ -3,9 +3,9 @@ from collections.abc import Iterator
 from fastapi import Depends
 from psycopg import Connection
 
-from app.modules.profesionales.application.use_cases import ProfesionalesUseCases
-from app.modules.profesionales.infrastructure.persistence.profesional_repository import (
-    PsycopgProfesionalRepository,
+from app.modules.profesionales.application.use_cases import ProfessionalUseCases
+from app.modules.profesionales.infrastructure.persistence.professional_repository import (
+    PsycopgProfessionalRepository,
 )
 from app.shared.infrastructure.db.database import db
 
@@ -15,9 +15,9 @@ def get_conn() -> Iterator[Connection]:
         yield conn
 
 
-def get_repo(conn: Connection = Depends(get_conn)) -> PsycopgProfesionalRepository:
-    return PsycopgProfesionalRepository(conn)
+def get_repo(conn: Connection = Depends(get_conn)) -> PsycopgProfessionalRepository:
+    return PsycopgProfessionalRepository(conn)
 
 
-def get_use_cases(repo: PsycopgProfesionalRepository = Depends(get_repo)) -> ProfesionalesUseCases:
-    return ProfesionalesUseCases(repo)
+def get_use_cases(repo: PsycopgProfessionalRepository = Depends(get_repo)) -> ProfessionalUseCases:
+    return ProfessionalUseCases(repo)

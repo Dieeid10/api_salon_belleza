@@ -2,48 +2,50 @@ from collections.abc import Callable
 from datetime import date, datetime
 from typing import Protocol
 
-from app.modules.turnos.application.dto import ServicioInfo, TurnoVentaInfo
+from app.modules.turnos.application.dto import AppointmentSaleInfo, ServiceInfo
 from app.modules.turnos.domain.entities import Turno
-from app.modules.turnos.domain.value_objects import EstadoTurno, FranjaHoraria
+from app.modules.turnos.domain.value_objects import EstadoTurno, TimeSlot
 
-Reloj = Callable[[], datetime]  # debe devolver un datetime con zona horaria
+Clock = Callable[[], datetime]
 
 
-class TurnoRepository(Protocol):
-    def crear(self, turno: Turno) -> Turno: pass
-    def obtener(self, turno_id: int, bloquear: bool = False) -> Turno | None: pass
-    def actualizar_estado(self, turno: Turno) -> None: pass
-    def listar_ocupados(
-        self, profesional_id: int, desde: datetime, hasta: datetime
-    ) -> list[FranjaHoraria]: pass
-    def listar(
+class AppointmentRepository(Protocol):
+    def create(self, appointment: Turno) -> Turno: ...
+    def get(self, appointment_id: int, lock: bool = False) -> Turno | None: ...
+    def update_status(self, appointment: Turno) -> None: ...
+    def list_busy_slots(
+        self, professional_id: int, start: datetime, end: datetime
+    ) -> list[TimeSlot]: ...
+    def list_all(
         self,
-        desde: datetime,
-        hasta: datetime,
-        profesional_id: int | None = None,
-        estado: EstadoTurno | None = None,
-    ) -> list[Turno]: pass
-    def obtener_para_venta(self, turno_id: int, bloquear: bool = False) -> TurnoVentaInfo | None: pass
+        start: datetime,
+        end: datetime,
+        professional_id: int | None = None,
+        status: EstadoTurno | None = None,
+    ) -> list[Turno]: ...
+    def get_for_sale(
+        self, appointment_id: int, lock: bool = False
+    ) -> AppointmentSaleInfo | None: ...
 
 
-class ServicioCatalogo(Protocol):
-    def obtener_activos(self, servicio_ids: list[int]) -> list[ServicioInfo]: pass
+class ServiceCatalog(Protocol):
+    def get_active(self, service_ids: list[int]) -> list[ServiceInfo]: ...
 
 
-class ClienteRegistro(Protocol):
-    def obtener_o_crear(self, nombre: str, apellido: str, telefono: str) -> int: pass
+class ClientRegistration(Protocol):
+    def get_or_create(self, first_name: str, last_name: str, phone: str) -> int: ...
 
 
-class AgendaProfesional(Protocol):
-    def esta_activo(self, profesional_id: int) -> bool: pass
-    def jornada(self, profesional_id: int, fecha: date) -> list[FranjaHoraria]: pass
+class ProfessionalSchedule(Protocol):
+    def is_active(self, professional_id: int) -> bool: ...
+    def get_schedule(self, professional_id: int, date: date) -> list[TimeSlot]: ...
 
 
-class TurnosUnitOfWork(Protocol):
-    turnos: TurnoRepository
-    servicios: ServicioCatalogo
-    clientes: ClienteRegistro
-    agenda: AgendaProfesional
+class AppointmentsUnitOfWork(Protocol):
+    appointments: AppointmentRepository
+    services: ServiceCatalog
+    clients: ClientRegistration
+    schedule: ProfessionalSchedule
 
-    def __enter__(self) -> "TurnosUnitOfWork": pass
-    def __exit__(self, exc_type, exc, tb) -> bool | None: pass
+    def __enter__(self) -> "AppointmentsUnitOfWork": ...
+    def __exit__(self, exc_type, exc, tb) -> bool | None: ...

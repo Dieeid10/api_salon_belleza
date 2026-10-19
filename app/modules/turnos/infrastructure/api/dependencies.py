@@ -3,40 +3,40 @@ from zoneinfo import ZoneInfo
 
 from fastapi import Depends
 
-from app.modules.turnos.application.use_cases.cambiar_estado_turno import CambiarEstadoTurno
-from app.modules.turnos.application.use_cases.cancelar_turno import CancelarTurno
-from app.modules.turnos.application.use_cases.consultar_disponibilidad import ConsultarDisponibilidad
-from app.modules.turnos.application.use_cases.listar_turnos import ListarTurnos
-from app.modules.turnos.application.use_cases.obtener_turno import ObtenerTurno
-from app.modules.turnos.application.use_cases.reservar_turno import ReservarTurno
-from app.modules.turnos.infrastructure.persistence.unit_of_work import PsycopgTurnosUnitOfWork
+from app.modules.turnos.application.use_cases.change_appointment_status import ChangeAppointmentStatus
+from app.modules.turnos.application.use_cases.cancel_appointment import CancelAppointment
+from app.modules.turnos.application.use_cases.check_appointment_availability import CheckAppointmentAvailability
+from app.modules.turnos.application.use_cases.list_appointments import ListAppointments
+from app.modules.turnos.application.use_cases.get_appointment import GetAppointment
+from app.modules.turnos.application.use_cases.book_appointment import BookAppointment
+from app.modules.turnos.infrastructure.persistence.unit_of_work import PsycopgAppointmentsUnitOfWork
 from app.shared.infrastructure.config import settings
 
-ZONA = ZoneInfo(settings.zona_horaria)
+TIMEZONE = ZoneInfo(settings.zona_horaria)
 
 
-def reloj() -> datetime:
+def clock() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def get_uow() -> PsycopgTurnosUnitOfWork:
-    return PsycopgTurnosUnitOfWork(ZONA)  # uno nuevo por request
+def get_unit_of_work() -> PsycopgAppointmentsUnitOfWork:
+    return PsycopgAppointmentsUnitOfWork(TIMEZONE)
 
 
-def get_consultar_disponibilidad(uow=Depends(get_uow)) -> ConsultarDisponibilidad:
-    return ConsultarDisponibilidad(uow, reloj)
+def get_availability_use_case(uow=Depends(get_unit_of_work)) -> CheckAppointmentAvailability:
+    return CheckAppointmentAvailability(uow, clock)
 
-def get_reservar(uow=Depends(get_uow)) -> ReservarTurno:
-    return ReservarTurno(uow, ZONA, reloj)
+def get_booking_use_case(uow=Depends(get_unit_of_work)) -> BookAppointment:
+    return BookAppointment(uow, TIMEZONE, clock)
 
-def get_cancelar(uow=Depends(get_uow)) -> CancelarTurno:
-    return CancelarTurno(uow, reloj)
+def get_cancel_appointment_use_case(uow=Depends(get_unit_of_work)) -> CancelAppointment:
+    return CancelAppointment(uow, clock)
 
-def get_cambiar_estado(uow=Depends(get_uow)) -> CambiarEstadoTurno:
-    return CambiarEstadoTurno(uow, reloj)
+def get_change_status_use_case(uow=Depends(get_unit_of_work)) -> ChangeAppointmentStatus:
+    return ChangeAppointmentStatus(uow, clock)
 
-def get_obtener(uow=Depends(get_uow)) -> ObtenerTurno:
-    return ObtenerTurno(uow)
+def get_appointment_use_case(uow=Depends(get_unit_of_work)) -> GetAppointment:
+    return GetAppointment(uow)
 
-def get_listar(uow=Depends(get_uow)) -> ListarTurnos:
-    return ListarTurnos(uow, ZONA)
+def get_list_appointments_use_case(uow=Depends(get_unit_of_work)) -> ListAppointments:
+    return ListAppointments(uow, TIMEZONE)

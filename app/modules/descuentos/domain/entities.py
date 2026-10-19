@@ -12,7 +12,7 @@ class TipoDescuento(StrEnum):
 
 
 @dataclass
-class Descuento:
+class Discount:
     nombre: str
     tipo: TipoDescuento
     porcentaje: Decimal
@@ -48,24 +48,24 @@ class Descuento:
         ):
             raise ValidationError("La fecha final no puede ser anterior a la inicial")
 
-    def vigente_en(self, fecha: date) -> bool:
+    def is_valid_on(self, date: date) -> bool:
         return (
             self.activo
-            and (self.fecha_inicio is None or self.fecha_inicio <= fecha)
-            and (self.fecha_fin is None or self.fecha_fin >= fecha)
+            and (self.fecha_inicio is None or self.fecha_inicio <= date)
+            and (self.fecha_fin is None or self.fecha_fin >= date)
         )
 
-    def calcular_precio(self, precio: Decimal, fecha: date) -> Decimal:
-        if not precio.is_finite():
+    def calculate_price(self, price: Decimal, date: date) -> Decimal:
+        if not price.is_finite():
             raise ValidationError("El precio debe ser un número finito")
-        if precio < 0:
+        if price < 0:
             raise ValidationError("El precio no puede ser negativo")
-        if not self.vigente_en(fecha):
-            return precio.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        if not self.is_valid_on(date):
+            return price.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         factor = Decimal("1") - self.porcentaje / Decimal("100")
-        return (precio * factor).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        return (price * factor).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
-    def actualizar_datos(
+    def update_details(
         self,
         nombre: str,
         tipo: TipoDescuento,
@@ -74,7 +74,7 @@ class Descuento:
         fecha_inicio: date | None,
         fecha_fin: date | None,
     ) -> None:
-        actualizado = Descuento(
+        updated = Discount(
             nombre=nombre,
             tipo=tipo,
             porcentaje=porcentaje,
@@ -84,12 +84,12 @@ class Descuento:
             activo=self.activo,
             id=self.id,
         )
-        self.nombre = actualizado.nombre
-        self.tipo = actualizado.tipo
-        self.porcentaje = actualizado.porcentaje
-        self.servicio_id = actualizado.servicio_id
-        self.fecha_inicio = actualizado.fecha_inicio
-        self.fecha_fin = actualizado.fecha_fin
+        self.nombre = updated.nombre
+        self.tipo = updated.tipo
+        self.porcentaje = updated.porcentaje
+        self.servicio_id = updated.servicio_id
+        self.fecha_inicio = updated.fecha_inicio
+        self.fecha_fin = updated.fecha_fin
 
-    def desactivar(self) -> None:
+    def deactivate(self) -> None:
         self.activo = False

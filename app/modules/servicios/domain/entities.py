@@ -5,7 +5,7 @@ from app.shared.error import ValidationError
 
 
 @dataclass
-class Servicio:
+class Service:
     nombre_servicio: str
     precio: Decimal
     duracion_minutos: int = 60
@@ -34,7 +34,7 @@ class Servicio:
         if self.duracion_minutos <= 0:
             raise ValidationError("La duración debe ser mayor a cero")
 
-    def actualizar_datos(
+    def update_details(
         self,
         nombre_servicio: str,
         precio: Decimal,
@@ -42,7 +42,7 @@ class Servicio:
         descripcion: str | None,
         visible_online: bool,
     ) -> None:
-        actualizado = Servicio(
+        actualizado = Service(
             nombre_servicio=nombre_servicio,
             precio=precio,
             duracion_minutos=duracion_minutos,
@@ -57,5 +57,5 @@ class Servicio:
         self.descripcion = actualizado.descripcion
         self.visible_online = actualizado.visible_online
 
-    def desactivar(self) -> None:
+    def deactivate(self) -> None:
         self.activo = False

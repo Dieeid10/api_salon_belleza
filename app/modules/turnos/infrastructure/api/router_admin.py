@@ -4,16 +4,18 @@ from datetime import date
 from fastapi import APIRouter, Depends, status
 
 from app.modules.turnos.application.dto import (
-    CambiarEstadoCommand, ListarTurnosQuery, ReservarTurnoCommand,
+    BookAppointmentCommand, ChangeAppointmentStatusCommand, ListAppointmentsQuery,
 )
-from app.modules.turnos.application.use_cases.cambiar_estado_turno import CambiarEstadoTurno
-from app.modules.turnos.application.use_cases.cancelar_turno import CancelarTurno
-from app.modules.turnos.application.use_cases.listar_turnos import ListarTurnos
-from app.modules.turnos.application.use_cases.obtener_turno import ObtenerTurno
-from app.modules.turnos.application.use_cases.reservar_turno import ReservarTurno
+from app.modules.turnos.application.use_cases.change_appointment_status import ChangeAppointmentStatus
+from app.modules.turnos.application.use_cases.cancel_appointment import CancelAppointment
+from app.modules.turnos.application.use_cases.list_appointments import ListAppointments
+from app.modules.turnos.application.use_cases.get_appointment import GetAppointment
+from app.modules.turnos.application.use_cases.book_appointment import BookAppointment
 from app.modules.turnos.domain.value_objects import EstadoTurno
 from app.modules.turnos.infrastructure.api.dependencies import (
-    get_cambiar_estado, get_cancelar, get_listar, get_obtener, get_reservar,
+    get_appointment_use_case, get_booking_use_case,
+    get_cancel_appointment_use_case, get_change_status_use_case,
+    get_list_appointments_use_case,
 )
 from app.modules.turnos.infrastructure.api.schemas import (
     CambiarEstadoRequest, ReservarTurnoRequest, TurnoResponse,
@@ -30,30 +32,30 @@ def listar(
     hasta: date,
     profesional_id: int | None = None,
     estado: EstadoTurno | None = None,
-    uc: ListarTurnos = Depends(get_listar),
+    uc: ListAppointments = Depends(get_list_appointments_use_case),
 ):
-    resultados = uc.execute(ListarTurnosQuery(desde, hasta, profesional_id, estado))
+    resultados = uc.execute(ListAppointmentsQuery(desde, hasta, profesional_id, estado))
     return [asdict(r) for r in resultados]
 
 
 @router.get("/{turno_id}", response_model=TurnoResponse)
-def obtener(turno_id: int, uc: ObtenerTurno = Depends(get_obtener)):
+def obtener(turno_id: int, uc: GetAppointment = Depends(get_appointment_use_case)):
     return asdict(uc.execute(turno_id))
 
 
 @router.post("/", response_model=TurnoResponse, status_code=status.HTTP_201_CREATED)
-def reservar(body: ReservarTurnoRequest, uc: ReservarTurno = Depends(get_reservar)):
-    return asdict(uc.execute(ReservarTurnoCommand(**body.model_dump())))
+def reservar(body: ReservarTurnoRequest, uc: BookAppointment = Depends(get_booking_use_case)):
+    return asdict(uc.execute(BookAppointmentCommand(**body.model_dump())))
 
 
 @router.post("/{turno_id}/cancelar", response_model=TurnoResponse)
-def cancelar(turno_id: int, uc: CancelarTurno = Depends(get_cancelar)):
+def cancelar(turno_id: int, uc: CancelAppointment = Depends(get_cancel_appointment_use_case)):
     return asdict(uc.execute(turno_id))
 
 
 @router.patch("/{turno_id}/estado", response_model=TurnoResponse)
 def cambiar_estado(
     turno_id: int, body: CambiarEstadoRequest,
-    uc: CambiarEstadoTurno = Depends(get_cambiar_estado),
+    uc: ChangeAppointmentStatus = Depends(get_change_status_use_case),
 ):
-    return asdict(uc.execute(CambiarEstadoCommand(turno_id, body.nuevo_estado)))
+    return asdict(uc.execute(ChangeAppointmentStatusCommand(turno_id, body.nuevo_estado)))

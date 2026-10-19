@@ -3,9 +3,10 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 
 from app.modules.turnos.domain.errors import (
-    TransicionInvalida, TurnoEnElPasado, TurnoNoIniciado, TurnoSinServicios,
+    AppointmentInPast, AppointmentNotStarted, AppointmentWithoutServices,
+    InvalidStatusTransition,
 )
-from app.modules.turnos.domain.value_objects import EstadoTurno, FranjaHoraria
+from app.modules.turnos.domain.value_objects import EstadoTurno, TimeSlot
 from app.shared.error import ValidationError
 
 @dataclass(frozen=True)
@@ -19,7 +20,7 @@ class DetalleTurno:
 class Turno:
     cliente_id: int
     profesional_id: int
-    franja: FranjaHoraria
+    franja: TimeSlot
     detalles: list[DetalleTurno]
     estado: EstadoTurno = EstadoTurno.PENDIENTE
     id: int | None = None
@@ -29,35 +30,35 @@ class Turno:
         return sum((d.precio for d in self.detalles), Decimal(0))
 
     @classmethod
-    def agendar(cls, cliente_id: int, profesional_id: int, inicio: datetime, detalles: list[DetalleTurno], ahora: datetime) -> "Turno":
+    def schedule(cls, cliente_id: int, profesional_id: int, inicio: datetime, detalles: list[DetalleTurno], ahora: datetime) -> "Turno":
         if not detalles:
-            raise TurnoSinServicios()
+            raise AppointmentWithoutServices()
 
         if inicio.tzinfo is None:
             raise ValidationError("El inicio debe incluir zona horaria")
 
         if inicio <= ahora:
-            raise TurnoEnElPasado()
+            raise AppointmentInPast()
 
         duracion = timedelta(minutes=sum(d.duracion_min for d in detalles))
             
         return cls(
             cliente_id=cliente_id,
             profesional_id=profesional_id,
-            franja=FranjaHoraria(inicio, inicio + duracion),
+            franja=TimeSlot(inicio, inicio + duracion),
             detalles=list(detalles),
         )
 
-    def cambiar_estado(self, nuevo: EstadoTurno, ahora: datetime) -> None:
-        if not self.estado.puede_pasar_a(nuevo):
-            raise TransicionInvalida(
+    def change_status(self, nuevo: EstadoTurno, ahora: datetime) -> None:
+        if not self.estado.can_transition_to(nuevo):
+            raise InvalidStatusTransition(
                 f"No se puede pasar de '{self.estado.value}' a '{nuevo.value}'"
             )
 
         if nuevo in (EstadoTurno.COMPLETADO, EstadoTurno.AUSENTE) and ahora < self.franja.inicio:
-            raise TurnoNoIniciado()
+            raise AppointmentNotStarted()
             
         self.estado = nuevo
 
-    def cancelar(self, ahora: datetime) -> None:
-        self.cambiar_estado(EstadoTurno.CANCELADO, ahora)
+    def cancel(self, ahora: datetime) -> None:
+        self.change_status(EstadoTurno.CANCELADO, ahora)

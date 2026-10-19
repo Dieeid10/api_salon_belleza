@@ -6,7 +6,7 @@ from app.modules.turnos.domain.value_objects import EstadoTurno
 
 
 @dataclass(frozen=True)
-class ServicioInfo:
+class ServiceInfo:
     """Lo que turnos necesita saber de un servicio."""
     id: int
     nombre: str
@@ -15,7 +15,7 @@ class ServicioInfo:
 
 
 @dataclass(frozen=True)
-class DetalleTurnoVentaInfo:
+class AppointmentSaleDetailInfo:
     servicio_id: int
     descuento_id: int | None
     precio_lista: Decimal
@@ -24,22 +24,22 @@ class DetalleTurnoVentaInfo:
 
 
 @dataclass(frozen=True)
-class TurnoVentaInfo:
+class AppointmentSaleInfo:
     id: int
     cliente_id: int
     estado: str
-    detalles: list[DetalleTurnoVentaInfo]
+    detalles: list[AppointmentSaleDetailInfo]
 
 
 @dataclass(frozen=True)
-class ConsultarDisponibilidadQuery:
+class CheckAvailabilityQuery:
     profesional_id: int
     servicio_ids: list[int]
     fecha: date
 
 
 @dataclass(frozen=True)
-class ReservarTurnoCommand:
+class BookAppointmentCommand:
     nombre: str
     apellido: str
     telefono: str
@@ -49,13 +49,13 @@ class ReservarTurnoCommand:
 
 
 @dataclass(frozen=True)
-class CambiarEstadoCommand:
+class ChangeAppointmentStatusCommand:
     turno_id: int
     nuevo_estado: EstadoTurno
 
 
 @dataclass(frozen=True)
-class ListarTurnosQuery:
+class ListAppointmentsQuery:
     desde: date
     hasta: date
     profesional_id: int | None = None
@@ -63,7 +63,7 @@ class ListarTurnosQuery:
 
 
 @dataclass(frozen=True)
-class DetalleResult:
+class AppointmentDetailResult:
     servicio_id: int
     nombre: str
     duracion_min: int
@@ -71,7 +71,7 @@ class DetalleResult:
 
 
 @dataclass(frozen=True)
-class TurnoResult:
+class AppointmentResult:
     id: int
     cliente_id: int
     profesional_id: int
@@ -79,11 +79,11 @@ class TurnoResult:
     fin: datetime
     estado: str
     total: Decimal
-    detalles: list[DetalleResult]
+    detalles: list[AppointmentDetailResult]
 
 
 @dataclass(frozen=True)
-class DisponibilidadResult:
+class AvailabilityResult:
     profesional_id: int
     fecha: date
     duracion_min: int

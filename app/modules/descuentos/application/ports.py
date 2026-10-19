@@ -1,18 +1,18 @@
 from datetime import date
 from typing import Protocol
 
-from app.modules.descuentos.domain.entities import Descuento
-from app.modules.servicios.domain.entities import Servicio
+from app.modules.descuentos.domain.entities import Discount
+from app.modules.servicios.domain.entities import Service
 
 
-class DescuentoRepository(Protocol):
-    def crear(self, descuento: Descuento) -> Descuento: pass
-    def obtener(self, descuento_id: int) -> Descuento | None: pass
-    def listar(self) -> list[Descuento]: pass
-    def listar_publicos(self, fecha: date) -> list[Descuento]: pass
-    def obtener_chisme(self) -> Descuento | None: pass
-    def actualizar(self, descuento: Descuento) -> Descuento: pass
+class DiscountRepository(Protocol):
+    def create(self, discount: Discount) -> Discount: ...
+    def get(self, discount_id: int) -> Discount | None: ...
+    def list_all(self) -> list[Discount]: ...
+    def list_public(self, date: date) -> list[Discount]: ...
+    def get_gossip_discount(self) -> Discount | None: ...
+    def update(self, discount: Discount) -> Discount: ...
 
 
-class ServicioLookup(Protocol):
-    def obtener(self, servicio_id: int) -> Servicio | None: pass
+class ServiceLookup(Protocol):
+    def get(self, service_id: int) -> Service | None: ...

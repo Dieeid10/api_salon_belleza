@@ -6,7 +6,7 @@ from app.modules.descuentos.domain.entities import TipoDescuento
 
 
 @dataclass(frozen=True)
-class CrearDescuentoCommand:
+class CreateDiscountCommand:
     nombre: str
     tipo: TipoDescuento
     porcentaje: Decimal
@@ -16,7 +16,7 @@ class CrearDescuentoCommand:
 
 
 @dataclass(frozen=True)
-class ActualizarDescuentoCommand:
+class UpdateDiscountCommand:
     descuento_id: int
     nombre: str
     tipo: TipoDescuento
@@ -27,7 +27,7 @@ class ActualizarDescuentoCommand:
 
 
 @dataclass(frozen=True)
-class DescuentoResult:
+class DiscountResult:
     id: int
     nombre: str
     tipo: TipoDescuento

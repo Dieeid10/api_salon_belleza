@@ -1,45 +1,45 @@
 from app.modules.profesionales.application.dto import (
-    ActualizarProfesionalCommand,
-    CrearProfesionalCommand,
-    ProfesionalResult,
+    CreateProfessionalCommand,
+    ProfessionalResult,
+    UpdateProfessionalCommand,
 )
-from app.modules.profesionales.application.ports import ProfesionalRepository
-from app.modules.profesionales.domain.entities import Profesional
-from app.modules.profesionales.domain.errors import ProfesionalNoEncontrado
+from app.modules.profesionales.application.ports import ProfessionalRepository
+from app.modules.profesionales.domain.entities import Professional
+from app.modules.profesionales.domain.errors import ProfessionalNotFound
 
 # Mapper
-def _to_result(p: Profesional) -> ProfesionalResult:
-    return ProfesionalResult(
+def _to_result(p: Professional) -> ProfessionalResult:
+    return ProfessionalResult(
         id=p.id, nombre=p.nombre, perfil_id=p.perfil_id, activo=p.activo
     )
 
 
-class ProfesionalesUseCases:
-    def __init__(self, repo: ProfesionalRepository) -> None:
+class ProfessionalUseCases:
+    def __init__(self, repo: ProfessionalRepository) -> None:
         self._repo = repo
 
-    def crear(self, cmd: CrearProfesionalCommand) -> ProfesionalResult:
-        profesional = Profesional(nombre=cmd.nombre, perfil_id=cmd.perfil_id)
-        return _to_result(self._repo.crear(profesional))
+    def create(self, cmd: CreateProfessionalCommand) -> ProfessionalResult:
+        profesional = Professional(nombre=cmd.nombre, perfil_id=cmd.perfil_id)
+        return _to_result(self._repo.create(profesional))
 
-    def obtener(self, profesional_id: int) -> ProfesionalResult:
-        return _to_result(self._get_or_fail(profesional_id))
+    def get(self, profesional_id: int) -> ProfessionalResult:
+        return _to_result(self._get_or_raise(profesional_id))
 
-    def listar(self, solo_activos: bool = True) -> list[ProfesionalResult]:
-        return [_to_result(p) for p in self._repo.listar(solo_activos)]
+    def list_all(self, solo_activos: bool = True) -> list[ProfessionalResult]:
+        return [_to_result(p) for p in self._repo.list_all(solo_activos)]
 
-    def actualizar(self, cmd: ActualizarProfesionalCommand) -> ProfesionalResult:
-        profesional = self._get_or_fail(cmd.profesional_id)
-        profesional.actualizar_datos(cmd.nombre, cmd.perfil_id)
-        return _to_result(self._repo.actualizar(profesional))
+    def update(self, cmd: UpdateProfessionalCommand) -> ProfessionalResult:
+        profesional = self._get_or_raise(cmd.profesional_id)
+        profesional.update_details(cmd.nombre, cmd.perfil_id)
+        return _to_result(self._repo.update(profesional))
 
-    def desactivar(self, profesional_id: int) -> None:
-        profesional = self._get_or_fail(profesional_id)
-        profesional.desactivar()
-        self._repo.actualizar(profesional)
+    def deactivate(self, profesional_id: int) -> None:
+        profesional = self._get_or_raise(profesional_id)
+        profesional.deactivate()
+        self._repo.update(profesional)
 
-    def _get_or_fail(self, profesional_id: int) -> Profesional:
-        profesional = self._repo.obtener(profesional_id)
+    def _get_or_raise(self, profesional_id: int) -> Professional:
+        profesional = self._repo.get(profesional_id)
         if profesional is None:
-            raise ProfesionalNoEncontrado()
+            raise ProfessionalNotFound()
         return profesional

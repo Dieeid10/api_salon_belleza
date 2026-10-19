@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
 
-from app.modules.turnos.domain.errors import FranjaInvalida
+from app.modules.turnos.domain.errors import InvalidTimeSlot
 
 class EstadoTurno(str, Enum):
     PENDIENTE = "pendiente"
@@ -11,7 +11,7 @@ class EstadoTurno(str, Enum):
     CANCELADO = "cancelado"
     AUSENTE = "ausente"
 
-    def puede_pasar_a(self, nuevo: "EstadoTurno") -> bool:
+    def can_transition_to(self, nuevo: "EstadoTurno") -> bool:
         return nuevo in _TRANSICIONES[self]
 
 
@@ -26,25 +26,25 @@ _TRANSICIONES: dict[EstadoTurno, set[EstadoTurno]] = {
 }
 
 # Los estados que bloquean la agenda del profesional
-ESTADOS_ACTIVOS = (EstadoTurno.PENDIENTE, EstadoTurno.CONFIRMADO)
+ACTIVE_STATES = (EstadoTurno.PENDIENTE, EstadoTurno.CONFIRMADO)
 
 @dataclass(frozen=True)
-class FranjaHoraria:
+class TimeSlot:
     inicio: datetime
     fin: datetime
 
     def __post_init__(self) -> None:
         if self.inicio.tzinfo is None or self.fin.tzinfo is None:
-            raise FranjaInvalida("Las fechas deben incluir zona horaria")
+            raise InvalidTimeSlot("Las fechas deben incluir zona horaria")
         if self.fin <= self.inicio:
-            raise FranjaInvalida("El fin debe ser posterior al inicio")
+            raise InvalidTimeSlot("El fin debe ser posterior al inicio")
 
     @property
     def duracion(self) -> timedelta:
         return self.fin - self.inicio
 
-    def solapa(self, otra: "FranjaHoraria") -> bool:
+    def overlaps(self, otra: "TimeSlot") -> bool:
         return self.inicio < otra.fin and otra.inicio < self.fin
 
-    def contiene(self, otra: "FranjaHoraria") -> bool:
+    def contains(self, otra: "TimeSlot") -> bool:
         return self.inicio <= otra.inicio and otra.fin <= self.fin

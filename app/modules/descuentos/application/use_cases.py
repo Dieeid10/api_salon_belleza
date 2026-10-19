@@ -1,21 +1,21 @@
 from datetime import date
 
 from app.modules.descuentos.application.dto import (
-    ActualizarDescuentoCommand,
-    CrearDescuentoCommand,
-    DescuentoResult,
+    CreateDiscountCommand,
+    DiscountResult,
+    UpdateDiscountCommand,
 )
-from app.modules.descuentos.application.ports import DescuentoRepository, ServicioLookup
-from app.modules.descuentos.domain.entities import Descuento, TipoDescuento
+from app.modules.descuentos.application.ports import DiscountRepository, ServiceLookup
+from app.modules.descuentos.domain.entities import Discount, TipoDescuento
 from app.modules.descuentos.domain.errors import (
-    DescuentoNoEncontrado,
-    ServicioDescuentoNoEncontrado,
+    DiscountNotFound,
+    DiscountServiceNotFound,
 )
 
 
-def _to_result(descuento: Descuento) -> DescuentoResult:
+def _to_result(descuento: Discount) -> DiscountResult:
     assert descuento.id is not None
-    return DescuentoResult(
+    return DiscountResult(
         id=descuento.id,
         nombre=descuento.nombre,
         tipo=descuento.tipo,
@@ -27,18 +27,18 @@ def _to_result(descuento: Descuento) -> DescuentoResult:
     )
 
 
-class DescuentosUseCases:
+class DiscountUseCases:
     def __init__(
         self,
-        repo: DescuentoRepository,
-        servicios: ServicioLookup,
+        repo: DiscountRepository,
+        servicios: ServiceLookup,
     ) -> None:
         self._repo = repo
         self._servicios = servicios
 
-    def crear(self, cmd: CrearDescuentoCommand) -> DescuentoResult:
+    def create(self, cmd: CreateDiscountCommand) -> DiscountResult:
         self._validar_servicio(cmd.tipo, cmd.servicio_id)
-        descuento = Descuento(
+        descuento = Discount(
             nombre=cmd.nombre,
             tipo=cmd.tipo,
             porcentaje=cmd.porcentaje,
@@ -46,29 +46,29 @@ class DescuentosUseCases:
             fecha_inicio=cmd.fecha_inicio,
             fecha_fin=cmd.fecha_fin,
         )
-        return _to_result(self._repo.crear(descuento))
+        return _to_result(self._repo.create(descuento))
 
-    def obtener(self, descuento_id: int) -> DescuentoResult:
-        return _to_result(self._get_or_fail(descuento_id))
+    def get(self, descuento_id: int) -> DiscountResult:
+        return _to_result(self._get_or_raise(descuento_id))
 
-    def listar(self) -> list[DescuentoResult]:
-        return [_to_result(descuento) for descuento in self._repo.listar()]
+    def list_all(self) -> list[DiscountResult]:
+        return [_to_result(descuento) for descuento in self._repo.list_all()]
 
-    def listar_publicos(self, fecha: date) -> list[DescuentoResult]:
+    def list_public(self, fecha: date) -> list[DiscountResult]:
         return [
             _to_result(descuento)
-            for descuento in self._repo.listar_publicos(fecha)
-            if descuento.vigente_en(fecha)
+            for descuento in self._repo.list_public(fecha)
+            if descuento.is_valid_on(fecha)
             and descuento.servicio_id is not None
-            and (servicio := self._servicios.obtener(descuento.servicio_id)) is not None
+            and (servicio := self._servicios.get(descuento.servicio_id)) is not None
             and servicio.activo
             and servicio.visible_online
         ]
 
-    def actualizar(self, cmd: ActualizarDescuentoCommand) -> DescuentoResult:
+    def update(self, cmd: UpdateDiscountCommand) -> DiscountResult:
         self._validar_servicio(cmd.tipo, cmd.servicio_id)
-        descuento = self._get_or_fail(cmd.descuento_id)
-        descuento.actualizar_datos(
+        descuento = self._get_or_raise(cmd.descuento_id)
+        descuento.update_details(
             cmd.nombre,
             cmd.tipo,
             cmd.porcentaje,
@@ -76,22 +76,22 @@ class DescuentosUseCases:
             cmd.fecha_inicio,
             cmd.fecha_fin,
         )
-        return _to_result(self._repo.actualizar(descuento))
+        return _to_result(self._repo.update(descuento))
 
-    def desactivar(self, descuento_id: int) -> None:
-        descuento = self._get_or_fail(descuento_id)
-        descuento.desactivar()
-        self._repo.actualizar(descuento)
+    def deactivate(self, descuento_id: int) -> None:
+        descuento = self._get_or_raise(descuento_id)
+        descuento.deactivate()
+        self._repo.update(descuento)
 
-    def _get_or_fail(self, descuento_id: int) -> Descuento:
-        descuento = self._repo.obtener(descuento_id)
+    def _get_or_raise(self, descuento_id: int) -> Discount:
+        descuento = self._repo.get(descuento_id)
         if descuento is None:
-            raise DescuentoNoEncontrado()
+            raise DiscountNotFound()
         return descuento
 
     def _validar_servicio(
         self, tipo: TipoDescuento, servicio_id: int | None
     ) -> None:
         if tipo is TipoDescuento.SERVICIO:
-            if servicio_id is None or self._servicios.obtener(servicio_id) is None:
-                raise ServicioDescuentoNoEncontrado()
+            if servicio_id is None or self._servicios.get(servicio_id) is None:
+                raise DiscountServiceNotFound()

@@ -2,26 +2,26 @@ from decimal import Decimal
 
 from psycopg import Connection
 
-from app.modules.servicios.application.dto import ServicioCatalogoInfo
-from app.modules.servicios.domain.entities import Servicio
+from app.modules.servicios.application.dto import ServiceCatalogInfo
+from app.modules.servicios.domain.entities import Service
 from app.shared.infrastructure.db.crud import Crud
 
 TABLE = "servicios"
 
 
-class PsycopgServicioRepository:
+class PsycopgServiceRepository:
     def __init__(self, conn: Connection) -> None:
         self._crud = Crud(conn)
 
-    def crear(self, servicio: Servicio) -> Servicio:
-        row = self._crud.insert(TABLE, self._to_data(servicio))
-        return self._to_entity(row)
+    def create(self, servicio: Service) -> Service:
+        row = self._crud.insert(TABLE, self._to_database_record(servicio))
+        return self._to_service(row)
 
-    def obtener(self, servicio_id: int) -> Servicio | None:
+    def get(self, servicio_id: int) -> Service | None:
         row = self._crud.select(TABLE, servicio_id)
-        return self._to_entity(row) if row else None
+        return self._to_service(row) if row else None
 
-    def obtener_activos(self, servicio_ids: list[int]) -> list[ServicioCatalogoInfo]:
+    def get_active(self, servicio_ids: list[int]) -> list[ServiceCatalogInfo]:
         if not servicio_ids:
             return []
         rows = self._crud.conn.execute(
@@ -34,7 +34,7 @@ class PsycopgServicioRepository:
             (servicio_ids,),
         ).fetchall()
         return [
-            ServicioCatalogoInfo(
+            ServiceCatalogInfo(
                 id=row["id"],
                 nombre=row["nombre_servicio"],
                 duracion_min=row["duracion_minutos"],
@@ -43,15 +43,15 @@ class PsycopgServicioRepository:
             for row in rows
         ]
 
-    def listar(
-        self, solo_activos: bool = True, solo_visibles_online: bool = True
-    ) -> list[Servicio]:
+    def list_all(
+        self, active_only: bool = True, online_only: bool = True
+    ) -> list[Service]:
         condiciones: list[str] = []
         parametros: list[bool] = []
-        if solo_activos:
+        if active_only:
             condiciones.append("activo = %s")
             parametros.append(True)
-        if solo_visibles_online:
+        if online_only:
             condiciones.append("visible_online = %s")
             parametros.append(True)
 
@@ -60,18 +60,18 @@ class PsycopgServicioRepository:
             " AND ".join(condiciones) if condiciones else None,
             tuple(parametros),
         )
-        return [self._to_entity(row) for row in rows]
+        return [self._to_service(row) for row in rows]
 
-    def actualizar(self, servicio: Servicio) -> Servicio:
+    def update(self, servicio: Service) -> Service:
         if servicio.id is None:
             raise ValueError("No se puede actualizar un servicio sin id")
-        row = self._crud.update(TABLE, servicio.id, self._to_data(servicio))
+        row = self._crud.update(TABLE, servicio.id, self._to_database_record(servicio))
         if row is None:
             raise ValueError("El servicio dejó de existir durante la actualización")
-        return self._to_entity(row)
+        return self._to_service(row)
 
     @staticmethod
-    def _to_data(servicio: Servicio) -> dict:
+    def _to_database_record(servicio: Service) -> dict:
         return {
             "nombre_servicio": servicio.nombre_servicio,
             "descripcion": servicio.descripcion,
@@ -82,8 +82,8 @@ class PsycopgServicioRepository:
         }
 
     @staticmethod
-    def _to_entity(row: dict) -> Servicio:
-        return Servicio(
+    def _to_service(row: dict) -> Service:
+        return Service(
             id=row["id"],
             nombre_servicio=row["nombre_servicio"],
             descripcion=row["descripcion"],

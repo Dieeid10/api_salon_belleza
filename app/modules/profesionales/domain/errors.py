@@ -1,3 +1,3 @@
-from app.modules.profesionales.domain.error import ProfesionalNoEncontrado
+from app.modules.profesionales.domain.error import ProfessionalNotFound
 
-__all__ = ["ProfesionalNoEncontrado"]
+__all__ = ["ProfessionalNotFound"]

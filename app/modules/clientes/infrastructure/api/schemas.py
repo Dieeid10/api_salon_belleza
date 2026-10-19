@@ -1,26 +1,28 @@
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr, Field, model_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
 
-class ClienteRequest(BaseModel):
-    nombre: str = Field(min_length=1, max_length=100)
-    apellido: str = Field(min_length=1, max_length=100)
-    telefono: str | None = Field(default=None, max_length=50)
+class ClientRequest(BaseModel):
+    first_name: str = Field(alias="nombre", min_length=1, max_length=100)
+    last_name: str = Field(alias="apellido", min_length=1, max_length=100)
+    phone: str | None = Field(default=None, alias="telefono", max_length=50)
     email: EmailStr | None = Field(default=None, max_length=100)
 
     @model_validator(mode="after")
-    def validar_contacto(self):
-        if self.telefono is None and self.email is None:
+    def validate_contact_info(self):
+        if self.phone is None and self.email is None:
             raise ValueError("La clienta debe tener teléfono o email de contacto")
         return self
 
 
-class ClienteResponse(BaseModel):
+class ClientResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     id: int
-    nombre: str
-    apellido: str
-    telefono: str | None
+    first_name: str = Field(alias="nombre")
+    last_name: str = Field(alias="apellido")
+    phone: str | None = Field(alias="telefono")
     email: str | None
-    activo: bool
-    fecha_creacion: datetime
+    is_active: bool = Field(alias="activo")
+    created_at: datetime = Field(alias="fecha_creacion")

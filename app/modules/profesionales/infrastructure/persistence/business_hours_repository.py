@@ -2,16 +2,16 @@ from datetime import date
 
 from psycopg import Connection
 
-from app.modules.profesionales.application.dto import HorarioAtencionInfo
+from app.modules.profesionales.application.dto import BusinessHoursInfo
 
 
-class PsycopgHorarioAtencionRepository:
+class PsycopgBusinessHoursRepository:
     def __init__(self, conn: Connection) -> None:
         self._conn = conn
 
-    def jornada(
+    def get_schedule(
         self, profesional_id: int, fecha: date
-    ) -> list[HorarioAtencionInfo]:
+    ) -> list[BusinessHoursInfo]:
         dia_semana = (fecha.weekday() + 1) % 7
         rows = self._conn.execute(
             """
@@ -23,7 +23,7 @@ class PsycopgHorarioAtencionRepository:
             (profesional_id, dia_semana),
         ).fetchall()
         return [
-            HorarioAtencionInfo(
+            BusinessHoursInfo(
                 hora_apertura=row["hora_apertura"],
                 hora_cierre=row["hora_cierre"],
             )

@@ -1,4 +1,3 @@
-import logging
 from contextlib import asynccontextmanager
     
 from fastapi import FastAPI, Request, status
@@ -23,6 +22,9 @@ from app.shared.error import (
 from app.shared.config import settings
 from app.shared.infrastructure.db.database import db
 
+import logging
+import uvicorn
+
 logging.basicConfig(
     level=settings.log_level,
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -42,9 +44,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Salón API",
-    version="0.1.0",
+    version="1.10.0",
     lifespan=lifespan,
-    # Opcional: ocultar la documentación en producción
     docs_url="/docs" if settings.environment != "production" else None,
     redoc_url=None,
 )
@@ -80,19 +81,7 @@ app.include_router(ventas_router, prefix="/ventas", tags=["ventas"])
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(profesionales_router, prefix="/profesionales", tags=["profesionales"])
 app.include_router(turnos_publico_router, prefix="/turnos", tags=["turnos"])
-app.include_router(
-    turnos_admin_router,
-    prefix="/admin/turnos",
-    tags=["turnos-admin"],
-)
-
+app.include_router(turnos_admin_router, prefix="/admin/turnos", tags=["turnos-admin"])
 
 if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(
-        "app.main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=settings.environment != "production",
-    )
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=settings.environment != "production")

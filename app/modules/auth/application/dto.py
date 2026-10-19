@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 @dataclass(frozen=True)
-class SesionResult:
+class SessionResult:
     access_token: str
     refresh_token: str
     expires_in: int

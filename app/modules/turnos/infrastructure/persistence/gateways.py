@@ -2,69 +2,67 @@
 
 from datetime import date, datetime, tzinfo
 
-from app.modules.clientes.infrastructure.persistence.cliente_repository import (
-    PsycopgClienteRepository,
+from app.modules.clientes.infrastructure.persistence.client_repository import (
+    PsycopgClientRepository,
 )
-from app.modules.profesionales.infrastructure.persistence.horario_atencion_repository import (
-    PsycopgHorarioAtencionRepository,
+from app.modules.profesionales.infrastructure.persistence.business_hours_repository import PsycopgBusinessHoursRepository
+from app.modules.profesionales.infrastructure.persistence.professional_repository import (
+    PsycopgProfessionalRepository,
 )
-from app.modules.profesionales.infrastructure.persistence.profesional_repository import (
-    PsycopgProfesionalRepository,
+from app.modules.servicios.infrastructure.persistence.service_repository import (
+    PsycopgServiceRepository,
 )
-from app.modules.servicios.infrastructure.persistence.servicio_repository import (
-    PsycopgServicioRepository,
-)
-from app.modules.turnos.application.dto import ServicioInfo
-from app.modules.turnos.domain.value_objects import FranjaHoraria
+from app.modules.turnos.application.dto import ServiceInfo
+from app.modules.turnos.domain.value_objects import TimeSlot
 
 
-class PsycopgServicioCatalogo:
-    def __init__(self, repository: PsycopgServicioRepository) -> None:
+class PsycopgServiceCatalog:
+    def __init__(self, repository: PsycopgServiceRepository) -> None:
         self._repository = repository
 
-    def obtener_activos(self, servicio_ids: list[int]) -> list[ServicioInfo]:
+    def get_active(self, servicio_ids: list[int]) -> list[ServiceInfo]:
         return [
-            ServicioInfo(
+            ServiceInfo(
                 servicio.id,
                 servicio.nombre,
                 servicio.duracion_min,
                 servicio.precio,
             )
-            for servicio in self._repository.obtener_activos(servicio_ids)
+            for servicio in self._repository.get_active(servicio_ids)
         ]
 
 
-class PsycopgClienteRegistro:
-    def __init__(self, repository: PsycopgClienteRepository) -> None:
+class PsycopgClientRegistration:
+    def __init__(self, repository: PsycopgClientRepository) -> None:
         self._repository = repository
 
-    def obtener_o_crear(self, nombre: str, apellido: str, telefono: str) -> int:
-        return self._repository.obtener_o_crear_para_reserva(
+    def get_or_create(self, nombre: str, apellido: str, telefono: str) -> int:
+        return self._repository.get_or_create_for_reservation(
             nombre,
             apellido,
             telefono,
         )
 
 
-class PsycopgAgendaProfesional:
+class PsycopgProfessionalSchedule:
     def __init__(
         self,
-        profesionales: PsycopgProfesionalRepository,
-        horarios: PsycopgHorarioAtencionRepository,
+        profesionales: PsycopgProfessionalRepository,
+        horarios: PsycopgBusinessHoursRepository,
         zona: tzinfo,
     ) -> None:
         self._profesionales = profesionales
         self._horarios = horarios
         self._zona = zona
 
-    def esta_activo(self, profesional_id: int) -> bool:
-        return self._profesionales.esta_activo(profesional_id)
+    def is_active(self, profesional_id: int) -> bool:
+        return self._profesionales.is_active(profesional_id)
 
-    def jornada(self, profesional_id: int, fecha: date) -> list[FranjaHoraria]:
+    def get_schedule(self, profesional_id: int, fecha: date) -> list[TimeSlot]:
         return [
-            FranjaHoraria(
+            TimeSlot(
                 datetime.combine(fecha, horario.hora_apertura, tzinfo=self._zona),
                 datetime.combine(fecha, horario.hora_cierre, tzinfo=self._zona),
             )
-            for horario in self._horarios.jornada(profesional_id, fecha)
+            for horario in self._horarios.get_schedule(profesional_id, fecha)
         ]

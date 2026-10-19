@@ -4,7 +4,7 @@ from app.shared.error import ValidationError
 
 
 @dataclass
-class Profesional:
+class Professional:
     nombre: str
     perfil_id: str | None = None
     activo: bool = True
@@ -17,8 +17,8 @@ class Profesional:
         if len(self.nombre) > 100:
             raise ValidationError("El nombre no puede superar 100 caracteres")
 
-    def actualizar_datos(self, nombre: str, perfil_id: str | None) -> None:
-        actualizado = Profesional(
+    def update_details(self, nombre: str, perfil_id: str | None) -> None:
+        actualizado = Professional(
             nombre=nombre,
             perfil_id=perfil_id,
             activo=self.activo,
@@ -27,5 +27,5 @@ class Profesional:
         self.nombre = actualizado.nombre
         self.perfil_id = actualizado.perfil_id
 
-    def desactivar(self) -> None:
+    def deactivate(self) -> None:
         self.activo = False

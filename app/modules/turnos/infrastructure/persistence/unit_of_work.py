@@ -1,44 +1,44 @@
 from datetime import tzinfo
 
 from app.modules.turnos.infrastructure.persistence.gateways import (
-    PsycopgAgendaProfesional, PsycopgClienteRegistro, PsycopgServicioCatalogo,
+    PsycopgProfessionalSchedule, PsycopgClientRegistration, PsycopgServiceCatalog,
 )
-from app.modules.turnos.infrastructure.persistence.turno_repository import (
-    PsycopgTurnoRepository,
+from app.modules.turnos.infrastructure.persistence.appointment_repository import (
+    PsycopgAppointmentRepository,
 )
-from app.modules.clientes.infrastructure.persistence.cliente_repository import (
-    PsycopgClienteRepository,
+from app.modules.clientes.infrastructure.persistence.client_repository import (
+    PsycopgClientRepository,
 )
-from app.modules.profesionales.infrastructure.persistence.horario_atencion_repository import (
-    PsycopgHorarioAtencionRepository,
+from app.modules.profesionales.infrastructure.persistence.business_hours_repository import (
+    PsycopgBusinessHoursRepository,
 )
-from app.modules.profesionales.infrastructure.persistence.profesional_repository import (
-    PsycopgProfesionalRepository,
+from app.modules.profesionales.infrastructure.persistence.professional_repository import (
+    PsycopgProfessionalRepository,
 )
-from app.modules.servicios.infrastructure.persistence.servicio_repository import (
-    PsycopgServicioRepository,
+from app.modules.servicios.infrastructure.persistence.service_repository import (
+    PsycopgServiceRepository,
 )
 from app.shared.infrastructure.db.database import db
 
 
-class PsycopgTurnosUnitOfWork:
+class PsycopgAppointmentsUnitOfWork:
     """Una conexión y una transacción compartidas por todos los repositorios."""
 
-    def __init__(self, zona: tzinfo) -> None:
-        self._zona = zona
+    def __init__(self, timezone: tzinfo) -> None:
+        self._timezone = timezone
 
-    def __enter__(self) -> "PsycopgTurnosUnitOfWork":
+    def __enter__(self) -> "PsycopgAppointmentsUnitOfWork":
         self._tx = db.transaction()
         conn = self._tx.__enter__()  # toma una conexión del pool
-        clientes = PsycopgClienteRepository(conn)
-        profesionales = PsycopgProfesionalRepository(conn)
-        self.turnos = PsycopgTurnoRepository(conn)
-        self.servicios = PsycopgServicioCatalogo(PsycopgServicioRepository(conn))
-        self.clientes = PsycopgClienteRegistro(clientes)
-        self.agenda = PsycopgAgendaProfesional(
-            profesionales,
-            PsycopgHorarioAtencionRepository(conn),
-            self._zona,
+        clients = PsycopgClientRepository(conn)
+        professionals = PsycopgProfessionalRepository(conn)
+        self.appointments = PsycopgAppointmentRepository(conn)
+        self.services = PsycopgServiceCatalog(PsycopgServiceRepository(conn))
+        self.clients = PsycopgClientRegistration(clients)
+        self.schedule = PsycopgProfessionalSchedule(
+            professionals,
+            PsycopgBusinessHoursRepository(conn),
+            self._timezone,
         )
         return self
 

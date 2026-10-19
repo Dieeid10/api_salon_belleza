@@ -1,14 +1,14 @@
 from typing import Protocol
 
-from app.modules.servicios.application.dto import ServicioCatalogoInfo
-from app.modules.servicios.domain.entities import Servicio
+from app.modules.servicios.application.dto import ServiceCatalogInfo
+from app.modules.servicios.domain.entities import Service
 
 
-class ServicioRepository(Protocol):
-    def crear(self, servicio: Servicio) -> Servicio: pass
-    def obtener(self, servicio_id: int) -> Servicio | None: pass
-    def listar(
-        self, solo_activos: bool = True, solo_visibles_online: bool = True
-    ) -> list[Servicio]: pass
-    def obtener_activos(self, servicio_ids: list[int]) -> list[ServicioCatalogoInfo]: pass
-    def actualizar(self, servicio: Servicio) -> Servicio: pass
+class ServiceRepository(Protocol):
+    def create(self, service: Service) -> Service: ...
+    def get(self, service_id: int) -> Service | None: ...
+    def list_all(
+        self, active_only: bool = True, online_only: bool = True
+    ) -> list[Service]: ...
+    def get_active(self, service_ids: list[int]) -> list[ServiceCatalogInfo]: ...
+    def update(self, service: Service) -> Service: ...

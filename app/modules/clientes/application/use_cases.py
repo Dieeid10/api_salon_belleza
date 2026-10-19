@@ -1,68 +1,71 @@
 from app.modules.clientes.application.dto import (
-    ActualizarClienteCommand,
-    ClienteResult,
-    CrearClienteCommand,
+    ClientResult,
+    CreateClientCommand,
+    UpdateClientCommand,
 )
-from app.modules.clientes.application.ports import ClienteRepository
-from app.modules.clientes.domain.entities import Cliente
-from app.modules.clientes.domain.errors import ClienteNoEncontrada
+from app.modules.clientes.application.ports import ClientRepository
+from app.modules.clientes.domain.entities import Client
+from app.modules.clientes.domain.errors import ClientNotFound
 
 
-def _to_result(cliente: Cliente) -> ClienteResult:
-    assert cliente.id is not None
-    assert cliente.fecha_creacion is not None
-    return ClienteResult(
-        id=cliente.id,
-        nombre=cliente.nombre,
-        apellido=cliente.apellido,
-        telefono=cliente.telefono,
-        email=cliente.email,
-        activo=cliente.activo,
-        fecha_creacion=cliente.fecha_creacion,
+def _to_result(client: Client) -> ClientResult:
+    assert client.id is not None
+    assert client.created_at is not None
+    return ClientResult(
+        id=client.id,
+        first_name=client.first_name,
+        last_name=client.last_name,
+        phone=client.phone,
+        email=client.email,
+        is_active=client.is_active,
+        created_at=client.created_at,
     )
 
 
-class ClientesUseCases:
-    def __init__(self, repo: ClienteRepository) -> None:
-        self._repo = repo
+class ClientUseCases:
+    def __init__(self, repository: ClientRepository) -> None:
+        self._repository = repository
 
-    def crear(self, cmd: CrearClienteCommand) -> ClienteResult:
-        cliente = Cliente(
-            nombre=cmd.nombre,
-            apellido=cmd.apellido,
-            telefono=cmd.telefono,
-            email=cmd.email,
+    def create(self, command: CreateClientCommand) -> ClientResult:
+        client = Client(
+            first_name=command.first_name,
+            last_name=command.last_name,
+            phone=command.phone,
+            email=command.email,
         )
-        return _to_result(self._repo.crear(cliente))
+        return _to_result(self._repository.create(client))
 
-    def obtener(self, cliente_id: int) -> ClienteResult:
-        return _to_result(self._get_or_fail(cliente_id))
+    def get(self, client_id: int) -> ClientResult:
+        return _to_result(self._get_or_raise(client_id))
 
-    def listar(self, solo_activos: bool = True) -> list[ClienteResult]:
-        return [_to_result(cliente) for cliente in self._repo.listar(solo_activos)]
+    def list_all(self, active_only: bool = True) -> list[ClientResult]:
+        return [
+            _to_result(client)
+            for client in self._repository.list_all(active_only)
+        ]
 
-    def actualizar(self, cmd: ActualizarClienteCommand) -> ClienteResult:
-        cliente = self._get_or_fail(cmd.cliente_id)
-        cliente.actualizar_datos(
-            cmd.nombre,
-            cmd.apellido,
-            cmd.telefono,
-            cmd.email,
+    def update(self, command: UpdateClientCommand) -> ClientResult:
+        client = self._get_or_raise(command.client_id)
+        client.update_details(
+            command.first_name,
+            command.last_name,
+            command.phone,
+            command.email,
         )
-        return _to_result(self._repo.actualizar(cliente))
+        return _to_result(self._repository.update(client))
 
-    def desactivar(self, cliente_id: int) -> None:
-        cliente = self._get_or_fail(cliente_id)
-        cliente.desactivar()
-        self._repo.actualizar(cliente)
+    def deactivate(self, client_id: int) -> None:
+        client = self._get_or_raise(client_id)
+        client.deactivate()
+        self._repository.update(client)
 
-    def activar(self, cliente_id: int) -> None:
-        cliente = self._get_or_fail(cliente_id)
-        cliente.activar()
-        self._repo.actualizar(cliente)
+    def activate(self, client_id: int) -> None:
+        client = self._get_or_raise(client_id)
+        client.activate()
+        self._repository.update(client)
 
-    def _get_or_fail(self, cliente_id: int) -> Cliente:
-        cliente = self._repo.obtener(cliente_id)
-        if cliente is None:
-            raise ClienteNoEncontrada()
-        return cliente
+    def _get_or_raise(self, client_id: int) -> Client:
+        client = self._repository.get(client_id)
+        if client is None:
+            raise ClientNotFound()
+        return client

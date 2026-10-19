@@ -2,19 +2,19 @@ from decimal import Decimal
 
 from psycopg import Connection
 
-from app.modules.ventas.domain.entities import DetalleVenta, Venta
+from app.modules.ventas.domain.entities import Sale, SaleDetail
 from app.shared.infrastructure.db.crud import Crud
 
 TABLE = "ventas"
 DETAIL_TABLE = "detalle_ventas"
 
 
-class PsycopgVentaRepository:
+class PsycopgSaleRepository:
     def __init__(self, conn: Connection) -> None:
         self._conn = conn
         self._crud = Crud(conn)
 
-    def crear(self, venta: Venta) -> Venta:
+    def create(self, venta: Sale) -> Sale:
         row = self._crud.insert(
             TABLE,
             {
@@ -42,27 +42,27 @@ class PsycopgVentaRepository:
             )
         return venta
 
-    def obtener(self, venta_id: int) -> Venta | None:
+    def get(self, venta_id: int) -> Sale | None:
         row = self._crud.select(TABLE, venta_id)
         if row is None:
             return None
-        return self._to_entity(row, self._detalles([venta_id]).get(venta_id, []))
+        return self._to_sale(row, self._load_details([venta_id]).get(venta_id, []))
 
-    def listar(self) -> list[Venta]:
+    def list_all(self) -> list[Sale]:
         rows = self._conn.execute(
             "SELECT * FROM ventas ORDER BY fecha_hora DESC, id DESC"
         ).fetchall()
-        detalles = self._detalles([row["id"] for row in rows])
-        return [self._to_entity(row, detalles.get(row["id"], [])) for row in rows]
+        details = self._load_details([row["id"] for row in rows])
+        return [self._to_sale(row, details.get(row["id"], [])) for row in rows]
 
-    def obtener_por_turno(self, turno_id: int) -> Venta | None:
+    def get_by_appointment(self, turno_id: int) -> Sale | None:
         row = self._conn.execute(
             "SELECT id FROM ventas WHERE turno_id = %s ORDER BY id LIMIT 1",
             (turno_id,),
         ).fetchone()
-        return self.obtener(row["id"]) if row else None
+        return self.get(row["id"]) if row else None
 
-    def _detalles(self, venta_ids: list[int]) -> dict[int, list[DetalleVenta]]:
+    def _load_details(self, venta_ids: list[int]) -> dict[int, list[SaleDetail]]:
         if not venta_ids:
             return {}
         rows = self._conn.execute(
@@ -75,10 +75,10 @@ class PsycopgVentaRepository:
             """,
             (venta_ids,),
         ).fetchall()
-        resultado: dict[int, list[DetalleVenta]] = {}
+        resultado: dict[int, list[SaleDetail]] = {}
         for row in rows:
             resultado.setdefault(row["venta_id"], []).append(
-                DetalleVenta(
+                SaleDetail(
                     servicio_id=row["servicio_id"],
                     descuento_id=row["descuento_id"],
                     precio_lista=(
@@ -93,8 +93,8 @@ class PsycopgVentaRepository:
         return resultado
 
     @staticmethod
-    def _to_entity(row: dict, detalles: list[DetalleVenta]) -> Venta:
-        return Venta(
+    def _to_sale(row: dict, detalles: list[SaleDetail]) -> Sale:
+        return Sale(
             id=row["id"],
             fecha_hora=row["fecha_hora"],
             cliente_id=row["cliente_id"],

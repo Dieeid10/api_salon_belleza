@@ -3,28 +3,28 @@ from datetime import datetime
 
 
 @dataclass(frozen=True)
-class CrearClienteCommand:
-    nombre: str
-    apellido: str
-    telefono: str | None = None
+class CreateClientCommand:
+    first_name: str
+    last_name: str
+    phone: str | None = None
     email: str | None = None
 
 
 @dataclass(frozen=True)
-class ActualizarClienteCommand:
-    cliente_id: int
-    nombre: str
-    apellido: str
-    telefono: str | None = None
+class UpdateClientCommand:
+    client_id: int
+    first_name: str
+    last_name: str
+    phone: str | None = None
     email: str | None = None
 
 
 @dataclass(frozen=True)
-class ClienteResult:
+class ClientResult:
     id: int
-    nombre: str
-    apellido: str
-    telefono: str | None
+    first_name: str
+    last_name: str
+    phone: str | None
     email: str | None
-    activo: bool
-    fecha_creacion: datetime
+    is_active: bool
+    created_at: datetime

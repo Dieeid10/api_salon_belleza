@@ -1,17 +1,19 @@
 from datetime import date
 from typing import Protocol
 
-from app.modules.profesionales.application.dto import HorarioAtencionInfo
-from app.modules.profesionales.domain.entities import Profesional
+from app.modules.profesionales.application.dto import BusinessHoursInfo
+from app.modules.profesionales.domain.entities import Professional
 
 
-class ProfesionalRepository(Protocol):
-    def crear(self, profesional: Profesional) -> Profesional: pass
-    def obtener(self, profesional_id: int) -> Profesional | None: pass
-    def listar(self, solo_activos: bool = True) -> list[Profesional]: pass
-    def actualizar(self, profesional: Profesional) -> Profesional: pass
-    def esta_activo(self, profesional_id: int) -> bool: pass
+class ProfessionalRepository(Protocol):
+    def create(self, professional: Professional) -> Professional: ...
+    def get(self, professional_id: int) -> Professional | None: ...
+    def list_all(self, active_only: bool = True) -> list[Professional]: ...
+    def update(self, professional: Professional) -> Professional: ...
+    def is_active(self, professional_id: int) -> bool: ...
 
 
-class HorarioAtencionRepository(Protocol):
-    def jornada(self, profesional_id: int, fecha: date) -> list[HorarioAtencionInfo]: pass
+class BusinessHoursRepository(Protocol):
+    def get_schedule(
+        self, professional_id: int, date: date
+    ) -> list[BusinessHoursInfo]: ...

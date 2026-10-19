@@ -1,4 +1,4 @@
 from app.shared.error import DomainError
 
-class CredencialesInvalidas(DomainError):
+class InvalidCredentials(DomainError):
     default_message = "Email o contraseña incorrectos"

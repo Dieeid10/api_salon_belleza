@@ -1,28 +1,28 @@
 from app.shared.error import ConflictError, NotFoundError, ValidationError
 
-class HorarioNoDisponible(ConflictError):
+class TimeSlotUnavailable(ConflictError):
     default_message = "El horario elegido ya no está disponible"
 
-class TransicionInvalida(ConflictError):
+class InvalidStatusTransition(ConflictError):
     default_message = "El cambio de estado no está permitido"
 
-class TurnoEnElPasado(ValidationError):
+class AppointmentInPast(ValidationError):
     default_message = "No se puede reservar un turno en el pasado"
 
-class TurnoNoIniciado(ValidationError):
+class AppointmentNotStarted(ValidationError):
     default_message = "El turno todavía no comenzó"
 
-class TurnoSinServicios(ValidationError):
+class AppointmentWithoutServices(ValidationError):
     default_message = "El turno necesita al menos un servicio"
 
-class FranjaInvalida(ValidationError):
+class InvalidTimeSlot(ValidationError):
     default_message = "La franja horaria es inválida"
 
-class TurnoNoEncontrado(NotFoundError):
+class AppointmentNotFound(NotFoundError):
     default_message = "El turno no existe"
 
-class ProfesionalInexistente(NotFoundError):
+class ProfessionalUnavailable(NotFoundError):
     default_message = "El profesional no existe o no está activo"
 
-class ServicioInexistente(NotFoundError):
+class ServiceUnavailable(NotFoundError):
     default_message = "Alguno de los servicios no existe o no está activo"

@@ -4,42 +4,42 @@ from decimal import Decimal
 from psycopg import Connection
 from psycopg.errors import ForeignKeyViolation, UniqueViolation
 
-from app.modules.descuentos.domain.entities import Descuento, TipoDescuento
+from app.modules.descuentos.domain.entities import Discount, TipoDescuento
 from app.modules.descuentos.domain.errors import (
-    DescuentoChismeYaConfigurado,
-    ServicioDescuentoNoEncontrado,
+    DiscountServiceNotFound,
+    GossipDiscountAlreadyConfigured,
 )
 from app.shared.infrastructure.db.crud import Crud
 
 TABLE = "descuentos"
 
 
-class PsycopgDescuentoRepository:
+class PsycopgDiscountRepository:
     def __init__(self, conn: Connection) -> None:
         self._crud = Crud(conn)
 
-    def crear(self, descuento: Descuento) -> Descuento:
+    def create(self, descuento: Discount) -> Discount:
         try:
-            row = self._crud.insert(TABLE, self._to_data(descuento))
+            row = self._crud.insert(TABLE, self._to_database_record(descuento))
         except UniqueViolation as error:
             self._raise_unique_conflict(error)
         except ForeignKeyViolation as error:
-            raise ServicioDescuentoNoEncontrado() from error
-        return self._to_entity(row)
+            raise DiscountServiceNotFound() from error
+        return self._to_discount(row)
 
-    def obtener(self, descuento_id: int) -> Descuento | None:
+    def get(self, descuento_id: int) -> Discount | None:
         row = self._crud.select(TABLE, descuento_id)
-        return self._to_entity(row) if row else None
+        return self._to_discount(row) if row else None
 
-    def listar(self) -> list[Descuento]:
+    def list_all(self) -> list[Discount]:
         rows = self._crud.select_all(TABLE)
-        return [self._to_entity(row) for row in rows]
+        return [self._to_discount(row) for row in rows]
 
-    def obtener_chisme(self) -> Descuento | None:
+    def get_gossip_discount(self) -> Discount | None:
         rows = self._crud.select_all(TABLE, "tipo = %s", (TipoDescuento.CHISME.value,))
-        return self._to_entity(rows[0]) if rows else None
+        return self._to_discount(rows[0]) if rows else None
 
-    def listar_publicos(self, fecha: date) -> list[Descuento]:
+    def list_public(self, fecha: date) -> list[Discount]:
         rows = self._crud.select_all(
             TABLE,
             "tipo = %s AND activo = %s "
@@ -47,23 +47,23 @@ class PsycopgDescuentoRepository:
             "AND (fecha_fin IS NULL OR fecha_fin >= %s)",
             (TipoDescuento.SERVICIO.value, True, fecha, fecha),
         )
-        return [self._to_entity(row) for row in rows]
+        return [self._to_discount(row) for row in rows]
 
-    def actualizar(self, descuento: Descuento) -> Descuento:
+    def update(self, descuento: Discount) -> Discount:
         if descuento.id is None:
             raise ValueError("No se puede actualizar un descuento sin id")
         try:
-            row = self._crud.update(TABLE, descuento.id, self._to_data(descuento))
+            row = self._crud.update(TABLE, descuento.id, self._to_database_record(descuento))
         except UniqueViolation as error:
             self._raise_unique_conflict(error)
         except ForeignKeyViolation as error:
-            raise ServicioDescuentoNoEncontrado() from error
+            raise DiscountServiceNotFound() from error
         if row is None:
             raise ValueError("El descuento dejó de existir durante la actualización")
-        return self._to_entity(row)
+        return self._to_discount(row)
 
     @staticmethod
-    def _to_data(descuento: Descuento) -> dict:
+    def _to_database_record(descuento: Discount) -> dict:
         return {
             "nombre": descuento.nombre,
             "tipo": descuento.tipo.value,
@@ -75,8 +75,8 @@ class PsycopgDescuentoRepository:
         }
 
     @staticmethod
-    def _to_entity(row: dict) -> Descuento:
-        return Descuento(
+    def _to_discount(row: dict) -> Discount:
+        return Discount(
             id=row["id"],
             nombre=row["nombre"],
             tipo=TipoDescuento(row["tipo"]),
@@ -90,5 +90,5 @@ class PsycopgDescuentoRepository:
     @staticmethod
     def _raise_unique_conflict(error: UniqueViolation) -> None:
         if error.diag.constraint_name == "uq_descuento_chisme":
-            raise DescuentoChismeYaConfigurado() from error
+            raise GossipDiscountAlreadyConfigured() from error
         raise error

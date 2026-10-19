@@ -5,14 +5,14 @@ from uuid import UUID
 
 
 @dataclass(frozen=True)
-class RegistrarVentaCommand:
+class RegisterSaleCommand:
     turno_id: int
     empleado_id: UUID
     chisme_detalle: str | None = None
 
 
 @dataclass(frozen=True)
-class DetalleVentaResult:
+class SaleDetailResult:
     servicio_id: int | None
     descuento_id: int | None
     precio_lista: Decimal | None
@@ -21,7 +21,7 @@ class DetalleVentaResult:
 
 
 @dataclass(frozen=True)
-class VentaResult:
+class SaleResult:
     id: int
     fecha_hora: datetime
     cliente_id: int | None
@@ -33,4 +33,4 @@ class VentaResult:
     subtotal: Decimal
     descuento_chisme: Decimal
     total: Decimal
-    detalles: list[DetalleVentaResult]
+    detalles: list[SaleDetailResult]

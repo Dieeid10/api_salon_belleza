@@ -3,7 +3,7 @@ from decimal import Decimal
 
 
 @dataclass(frozen=True)
-class CrearServicioCommand:
+class CreateServiceCommand:
     nombre_servicio: str
     precio: Decimal
     duracion_minutos: int = 60
@@ -12,7 +12,7 @@ class CrearServicioCommand:
 
 
 @dataclass(frozen=True)
-class ActualizarServicioCommand:
+class UpdateServiceCommand:
     servicio_id: int
     nombre_servicio: str
     precio: Decimal
@@ -22,7 +22,7 @@ class ActualizarServicioCommand:
 
 
 @dataclass(frozen=True)
-class ServicioResult:
+class ServiceResult:
     id: int
     nombre_servicio: str
     descripcion: str | None
@@ -33,7 +33,7 @@ class ServicioResult:
 
 
 @dataclass(frozen=True)
-class ServicioCatalogoInfo:
+class ServiceCatalogInfo:
     id: int
     nombre: str
     duracion_min: int

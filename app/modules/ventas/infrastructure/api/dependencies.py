@@ -4,18 +4,18 @@ from datetime import datetime, timezone
 from fastapi import Depends
 from psycopg import Connection
 
-from app.modules.clientes.infrastructure.persistence.cliente_repository import (
-    PsycopgClienteRepository,
+from app.modules.clientes.infrastructure.persistence.client_repository import (
+    PsycopgClientRepository,
 )
-from app.modules.descuentos.infrastructure.persistence.descuento_repository import (
-    PsycopgDescuentoRepository,
+from app.modules.descuentos.infrastructure.persistence.discount_repository import (
+    PsycopgDiscountRepository,
 )
-from app.modules.turnos.infrastructure.persistence.turno_repository import (
-    PsycopgTurnoRepository,
+from app.modules.turnos.infrastructure.persistence.appointment_repository import (
+    PsycopgAppointmentRepository,
 )
-from app.modules.ventas.application.use_cases import VentasUseCases
-from app.modules.ventas.infrastructure.persistence.venta_repository import (
-    PsycopgVentaRepository,
+from app.modules.ventas.application.use_cases import SaleUseCases
+from app.modules.ventas.infrastructure.persistence.sale_repository import (
+    PsycopgSaleRepository,
 )
 from app.shared.infrastructure.db.database import db
 
@@ -25,15 +25,15 @@ def get_conn() -> Iterator[Connection]:
         yield conn
 
 
-def reloj() -> datetime:
+def clock() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def get_use_cases(conn: Connection = Depends(get_conn)) -> VentasUseCases:
-    return VentasUseCases(
-        repo=PsycopgVentaRepository(conn),
-        turnos=PsycopgTurnoRepository(conn),
-        clientes=PsycopgClienteRepository(conn),
-        descuentos=PsycopgDescuentoRepository(conn),
-        reloj=reloj,
+def get_use_cases(conn: Connection = Depends(get_conn)) -> SaleUseCases:
+    return SaleUseCases(
+        repo=PsycopgSaleRepository(conn),
+        turnos=PsycopgAppointmentRepository(conn),
+        clients=PsycopgClientRepository(conn),
+        descuentos=PsycopgDiscountRepository(conn),
+        reloj=clock,
     )

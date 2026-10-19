@@ -3,23 +3,25 @@ from collections.abc import Iterator
 from fastapi import Depends
 from psycopg import Connection
 
-from app.modules.clientes.application.use_cases import ClientesUseCases
-from app.modules.clientes.infrastructure.persistence.cliente_repository import (
-    PsycopgClienteRepository,
+from app.modules.clientes.application.use_cases import ClientUseCases
+from app.modules.clientes.infrastructure.persistence.client_repository import (
+    PsycopgClientRepository,
 )
 from app.shared.infrastructure.db.database import db
 
 
-def get_conn() -> Iterator[Connection]:
+def get_connection() -> Iterator[Connection]:
     with db.transaction() as conn:
         yield conn
 
 
-def get_repo(conn: Connection = Depends(get_conn)) -> PsycopgClienteRepository:
-    return PsycopgClienteRepository(conn)
+def get_repository(
+    connection: Connection = Depends(get_connection),
+) -> PsycopgClientRepository:
+    return PsycopgClientRepository(connection)
 
 
 def get_use_cases(
-    repo: PsycopgClienteRepository = Depends(get_repo),
-) -> ClientesUseCases:
-    return ClientesUseCases(repo)
+    repository: PsycopgClientRepository = Depends(get_repository),
+) -> ClientUseCases:
+    return ClientUseCases(repository)

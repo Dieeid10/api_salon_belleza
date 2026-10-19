@@ -21,4 +21,4 @@ def login(body: LoginRequest, uc: AuthUseCases = Depends(get_use_cases)):
 
 @router.post("/refresh", response_model=SesionResponse)
 def refresh(body: RefreshRequest, uc: AuthUseCases = Depends(get_use_cases)):
-    return SesionResponse(**asdict(uc.refrescar(body.refresh_token)))
+    return SesionResponse(**asdict(uc.refresh(body.refresh_token)))

@@ -1,20 +1,20 @@
-from app.modules.turnos.application.dto import ServicioInfo
-from app.modules.turnos.application.ports import TurnosUnitOfWork
+from app.modules.turnos.application.dto import ServiceInfo
+from app.modules.turnos.application.ports import AppointmentsUnitOfWork
 from app.modules.turnos.domain.errors import (
-    ProfesionalInexistente, ServicioInexistente, TurnoSinServicios,
+    AppointmentWithoutServices, ProfessionalUnavailable, ServiceUnavailable,
 )
 
 
-def verificar_profesional(uow: TurnosUnitOfWork, profesional_id: int) -> None:
-    if not uow.agenda.esta_activo(profesional_id):
-        raise ProfesionalInexistente()
+def verify_professional(uow: AppointmentsUnitOfWork, professional_id: int) -> None:
+    if not uow.schedule.is_active(professional_id):
+        raise ProfessionalUnavailable()
 
 
-def cargar_servicios(uow: TurnosUnitOfWork, servicio_ids: list[int]) -> list[ServicioInfo]:
-    ids = list(dict.fromkeys(servicio_ids))
+def load_services(uow: AppointmentsUnitOfWork, service_ids: list[int]) -> list[ServiceInfo]:
+    ids = list(dict.fromkeys(service_ids))
     if not ids:
-        raise TurnoSinServicios()
-    servicios = uow.servicios.obtener_activos(ids)
-    if len(servicios) != len(ids):
-        raise ServicioInexistente()
-    return servicios
+        raise AppointmentWithoutServices()
+    services = uow.services.get_active(ids)
+    if len(services) != len(ids):
+        raise ServiceUnavailable()
+    return services
