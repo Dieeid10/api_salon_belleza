@@ -2,8 +2,6 @@ from collections.abc import Callable
 from datetime import datetime
 from decimal import Decimal
 
-from app.modules.clientes.domain.errors import ClientNotFound
-from app.modules.descuentos.domain.entities import TipoDescuento
 from app.modules.ventas.application.dto import (
     RegisterSaleCommand,
     SaleDetailResult,
@@ -21,6 +19,7 @@ from app.modules.ventas.domain.errors import (
     AppointmentNotCompleted,
     DuplicateAppointmentSale,
     GossipDiscountUnavailable,
+    SaleClientNotFound,
     SaleNotFound,
 )
 
@@ -28,6 +27,7 @@ Clock = Callable[[], datetime]
 
 
 def _to_result(sale: Sale) -> SaleResult:
+    """Convierte la entidad de negocio al resultado de aplicación."""
     assert sale.id is not None
     return SaleResult(
         id = sale.id,
@@ -55,6 +55,8 @@ def _to_result(sale: Sale) -> SaleResult:
 
 
 class SaleUseCases:
+    """Coordina las reglas para registrar, consultar y listar ventas."""
+
     def __init__(
         self,
         repo: SaleRepository,
@@ -70,28 +72,26 @@ class SaleUseCases:
         self._reloj = reloj
 
     def register(self, cmd: RegisterSaleCommand) -> SaleResult:
+        """Registra el cobro de un turno realizado y devuelve su resumen."""
         turno = self._turnos.get_for_sale(cmd.turno_id, lock=True)
         if turno is None:
             raise AppointmentForSaleNotFound()
-        if turno.estado != "Realizado":
+        if not turno.is_completed:
             raise AppointmentNotCompleted()
         if not turno.detalles:
             raise AppointmentNotCompleted("El turno realizado no tiene detalles cobrables")
         if self._repo.get_by_appointment(turno.id) is not None:
             raise DuplicateAppointmentSale()
-        if self._clients.get(turno.cliente_id) is None:
-            raise ClientNotFound()
+        if not self._clients.exists(turno.cliente_id):
+            raise SaleClientNotFound()
 
+        # El descuento especial solo se consulta cuando la solicitud trae un detalle.
         texto_chisme = cmd.chisme_detalle.strip() if cmd.chisme_detalle else None
         descuento_chisme = None
         porcentaje_chisme = Decimal("0")
         if texto_chisme:
-            descuento_chisme = self._descuentos.get_gossip_discount()
-            if (
-                descuento_chisme is None
-                or not descuento_chisme.activo
-                or descuento_chisme.tipo is not TipoDescuento.CHISME
-            ):
+            descuento_chisme = self._descuentos.get_active_gossip_discount()
+            if descuento_chisme is None:
                 raise GossipDiscountUnavailable()
             porcentaje_chisme = descuento_chisme.porcentaje
 
@@ -106,24 +106,26 @@ class SaleUseCases:
             for detalle in turno.detalles
         ]
         venta = Sale(
-            fecha_hora=self._reloj(),
-            cliente_id=turno.cliente_id,
-            empleado_id=cmd.empleado_id,
-            turno_id=turno.id,
-            descuento_chisme_id=(
+            fecha_hora = self._reloj(),
+            cliente_id = turno.cliente_id,
+            empleado_id = cmd.empleado_id,
+            turno_id = turno.id,
+            descuento_chisme_id = (
                 descuento_chisme.id if descuento_chisme is not None else None
             ),
-            chisme_pct=porcentaje_chisme,
-            chisme_detalle=texto_chisme,
-            detalles=detalles,
+            chisme_pct = porcentaje_chisme,
+            chisme_detalle = texto_chisme,
+            detalles = detalles,
         )
         return _to_result(self._repo.create(venta))
 
     def get(self, venta_id: int) -> SaleResult:
+        """Busca una venta por id o informa que no existe."""
         venta = self._repo.get(venta_id)
         if venta is None:
             raise SaleNotFound()
         return _to_result(venta)
 
     def list_all(self) -> list[SaleResult]:
+        """Devuelve todas las ventas convertidas a resultados de aplicación."""
         return [_to_result(venta) for venta in self._repo.list_all()]

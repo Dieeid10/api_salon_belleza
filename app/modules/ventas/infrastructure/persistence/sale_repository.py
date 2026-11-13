@@ -10,11 +10,14 @@ DETAIL_TABLE = "detalle_ventas"
 
 
 class PsycopgSaleRepository:
+    """Implementa el almacenamiento de ventas usando PostgreSQL y Psycopg."""
+
     def __init__(self, conn: Connection) -> None:
         self._conn = conn
         self._crud = Crud(conn)
 
     def create(self, venta: Sale) -> Sale:
+        """Guarda la venta y sus detalles dentro de la transacción actual."""
         row = self._crud.insert(
             TABLE,
             {
@@ -43,12 +46,14 @@ class PsycopgSaleRepository:
         return venta
 
     def get(self, venta_id: int) -> Sale | None:
+        """Busca una venta y carga sus detalles en una consulta adicional."""
         row = self._crud.select(TABLE, venta_id)
         if row is None:
             return None
         return self._to_sale(row, self._load_details([venta_id]).get(venta_id, []))
 
     def list_all(self) -> list[Sale]:
+        """Lista ventas y carga todos sus detalles en bloque, evitando N+1."""
         rows = self._conn.execute(
             "SELECT * FROM ventas ORDER BY fecha_hora DESC, id DESC"
         ).fetchall()
@@ -56,6 +61,7 @@ class PsycopgSaleRepository:
         return [self._to_sale(row, details.get(row["id"], [])) for row in rows]
 
     def get_by_appointment(self, turno_id: int) -> Sale | None:
+        """Busca si un turno ya fue cobrado y devuelve la venta asociada."""
         row = self._conn.execute(
             "SELECT id FROM ventas WHERE turno_id = %s ORDER BY id LIMIT 1",
             (turno_id,),
@@ -63,6 +69,7 @@ class PsycopgSaleRepository:
         return self.get(row["id"]) if row else None
 
     def _load_details(self, venta_ids: list[int]) -> dict[int, list[SaleDetail]]:
+        """Agrupa los detalles por venta para reconstruir las entidades."""
         if not venta_ids:
             return {}
         rows = self._conn.execute(
@@ -94,6 +101,7 @@ class PsycopgSaleRepository:
 
     @staticmethod
     def _to_sale(row: dict, detalles: list[SaleDetail]) -> Sale:
+        """Reconstruye una entidad de dominio desde una fila de PostgreSQL."""
         return Sale(
             id=row["id"],
             fecha_hora=row["fecha_hora"],

@@ -10,6 +10,7 @@ _CENTAVO = Decimal("0.01")
 
 
 def _validate_amount(name: str, amount: Decimal) -> Decimal:
+    """Valida un importe monetario y lo normaliza a Decimal."""
     value = Decimal(str(amount))
     if not value.is_finite() or value < 0:
         raise ValidationError(f"{name} debe ser un importe válido no negativo")
@@ -20,6 +21,8 @@ def _validate_amount(name: str, amount: Decimal) -> Decimal:
 
 @dataclass(frozen=True)
 class SaleDetail:
+    """Línea de una venta; sus valores no pueden cambiar tras crearse."""
+
     servicio_id: int | None
     descuento_id: int | None
     precio_lista: Decimal | None
@@ -27,6 +30,7 @@ class SaleDetail:
     precio_cobrado: Decimal
 
     def __post_init__(self) -> None:
+        """Valida precios y porcentaje al construir el detalle."""
         if self.precio_lista is not None:
             object.__setattr__(
                 self,
@@ -48,6 +52,8 @@ class SaleDetail:
 
 @dataclass
 class Sale:
+    """Venta y reglas para calcular sus importes a partir de los detalles."""
+
     fecha_hora: datetime
     cliente_id: int | None
     empleado_id: UUID | None
@@ -59,6 +65,7 @@ class Sale:
     id: int | None = None
 
     def __post_init__(self) -> None:
+        """Asegura que la venta tenga fecha, detalles y descuento válidos."""
         if self.fecha_hora.tzinfo is None:
             raise ValidationError("La fecha de venta debe incluir zona horaria")
         if not self.detalles:
@@ -77,18 +84,21 @@ class Sale:
 
     @property
     def subtotal(self) -> Decimal:
+        """Suma lo cobrado por los servicios antes del descuento especial."""
         return sum(
             (detalle.precio_cobrado for detalle in self.detalles), Decimal("0.00")
         ).quantize(_CENTAVO, rounding=ROUND_HALF_UP)
 
     @property
     def descuento_chisme(self) -> Decimal:
+        """Calcula el importe descontado y lo redondea a centavos."""
         return (self.subtotal * self.chisme_pct / Decimal("100")).quantize(
             _CENTAVO, rounding=ROUND_HALF_UP
         )
 
     @property
     def total(self) -> Decimal:
+        """Resta el descuento al subtotal para obtener el importe final."""
         return (self.subtotal - self.descuento_chisme).quantize(
             _CENTAVO, rounding=ROUND_HALF_UP
         )

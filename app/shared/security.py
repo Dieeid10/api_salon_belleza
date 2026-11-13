@@ -2,6 +2,7 @@ import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from app.shared.infrastructure.db.database import db
+from app.shared.infrastructure.db.crud import Crud
 from app.shared.infrastructure.config import settings
 
 _bearer = HTTPBearer(auto_error=False)
@@ -51,9 +52,8 @@ def current_user(creds: HTTPAuthorizationCredentials | None = Depends(_bearer)) 
 def current_staff(user: dict = Depends(current_user)) -> dict:
     """El JWT prueba quién es; que sea personal lo decide la tabla perfiles."""
     with db.transaction() as conn:
-        row = conn.execute(
-            "SELECT rol FROM perfiles WHERE id = %s", (user["sub"],)
-        ).fetchone()
+        crud = Crud(conn)
+        row = crud.select("perfiles", user["sub"], id_field="id")
     if row is None:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "No tenés permiso")
     return {**user, "rol": row["rol"]}

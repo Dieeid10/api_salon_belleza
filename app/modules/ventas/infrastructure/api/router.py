@@ -13,6 +13,7 @@ from app.modules.ventas.infrastructure.api.schemas import (
 from app.shared.security import require_role
 
 router = APIRouter()
+# Solo el dueño y el vendedor pueden consultar o registrar ventas.
 personal_del_salon = require_role("dueno", "vendedor")
 
 
@@ -21,6 +22,7 @@ def listar(
     _: dict = Depends(personal_del_salon),
     uc: SaleUseCases = Depends(get_use_cases),
 ):
+    """Lista ventas y convierte los DTOs a diccionarios para FastAPI."""
     return [asdict(venta) for venta in uc.list_all()]
 
 
@@ -30,6 +32,7 @@ def obtener(
     _: dict = Depends(personal_del_salon),
     uc: SaleUseCases = Depends(get_use_cases),
 ):
+    """Devuelve el detalle de una venta existente."""
     return asdict(uc.get(venta_id))
 
 
@@ -39,6 +42,7 @@ def registrar(
     user: dict = Depends(personal_del_salon),
     uc: SaleUseCases = Depends(get_use_cases),
 ):
+    """Obtiene la identidad del empleado y delega el registro al caso de uso."""
     try:
         empleado_id = UUID(user["sub"])
     except (KeyError, ValueError) as error:
